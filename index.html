@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Arma tu agenda personalizada para el Festival Estéreo Picnic 2026. Selecciona artistas, comparte con amigos y combina agendas.">
+  <meta name="theme-color" content="#0D0D12">
+  <title>Estéreo Picnic 2026 — Mi Agenda</title>
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/style.css">
+  
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
+</head>
+<body>
+  <!-- Gradient background -->
+  <div class="app-bg"></div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-brand">
+      <span class="header-logo">estéreo picnic</span>
+      <span class="header-year">2026</span>
+    </div>
+    <div class="header-actions">
+      <!-- Search (desktop) -->
+      <div class="search-wrapper">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="search-input" placeholder="Buscar artista..." autocomplete="off">
+        <div class="search-results" id="search-results"></div>
+      </div>
+      <!-- Selection counter (desktop) -->
+      <div class="desktop-selection-count" id="desktop-counter">
+        <span>🎵</span>
+        <span id="selection-count-desktop">0</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Day Tabs -->
+  <div class="day-tabs-wrapper" id="day-tabs"></div>
+
+  <!-- Schedule View (default) -->
+  <div class="view-panel active" id="panel-schedule">
+    <div class="main-layout">
+      <!-- Schedule Grid -->
+      <div class="schedule-panel">
+        <div id="schedule-grid"></div>
+      </div>
+
+      <!-- Sidebar (desktop only) -->
+      <aside class="sidebar">
+        <!-- My Schedule -->
+        <div class="sidebar-section">
+          <h3>🎵 Mi Agenda</h3>
+          <div id="my-schedule-list"></div>
+        </div>
+
+        <!-- Share -->
+        <div class="sidebar-section">
+          <h3>🔗 Compartir</h3>
+          <div class="share-buttons">
+            <button class="btn btn-primary btn-sm" id="btn-copy-link">📋 Copiar Link</button>
+            <button class="btn btn-secondary btn-sm" id="btn-copy-text">📝 Copiar Texto</button>
+          </div>
+          <div class="seed-input-group" style="margin-top: 12px;">
+            <input type="text" id="seed-input" placeholder="Pegar seed o URL...">
+            <button class="btn btn-secondary btn-sm" id="btn-load-seed">Cargar</button>
+          </div>
+        </div>
+
+        <!-- Recommendations -->
+        <div class="sidebar-section">
+          <div id="recommendations"></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- My Schedule View (mobile) -->
+  <div class="view-panel" id="panel-my-schedule">
+    <div class="panel-my-schedule">
+      <h2 style="font-family: 'Outfit', sans-serif; font-weight: 800; margin-bottom: 16px;">🎵 Mi Agenda</h2>
+      <div id="my-schedule-list-mobile"></div>
+
+      <!-- Share (mobile) -->
+      <div class="sidebar-section" style="margin-top: 16px;">
+        <h3>🔗 Compartir</h3>
+        <div class="share-buttons">
+          <button class="btn btn-primary btn-sm" id="btn-copy-link-mobile">📋 Copiar Link</button>
+          <button class="btn btn-secondary btn-sm" id="btn-copy-text-mobile">📝 Copiar Texto</button>
+        </div>
+        <div class="seed-input-group" style="margin-top: 12px;">
+          <input type="text" id="seed-input-mobile" placeholder="Pegar seed o URL...">
+          <button class="btn btn-secondary btn-sm" id="btn-load-seed-mobile">Cargar</button>
+        </div>
+      </div>
+
+      <!-- Recommendations (mobile) -->
+      <div class="sidebar-section" style="margin-top: 16px;">
+        <div id="recommendations-mobile"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Merge View -->
+  <div class="view-panel" id="panel-merge">
+    <div class="panel-merge">
+      <h2 style="font-family: 'Outfit', sans-serif; font-weight: 800; margin-bottom: 8px;">🤝 Combinar Agendas</h2>
+      <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 16px;">Pega los seeds o URLs de tus amigos para ver la ruta del grupo</p>
+      
+      <div class="merge-input-row">
+        <input type="text" id="merge-input-1" placeholder="Seed o URL — Persona 1">
+        <button class="btn btn-secondary btn-sm" id="btn-use-mine-1">Usar mía</button>
+      </div>
+      <div class="merge-input-row">
+        <input type="text" id="merge-input-2" placeholder="Seed o URL — Persona 2">
+        <button class="btn btn-secondary btn-sm" id="btn-use-mine-2">Usar mía</button>
+      </div>
+      <div class="merge-input-row">
+        <input type="text" id="merge-input-3" placeholder="Seed o URL — Persona 3 (opcional)">
+      </div>
+      
+      <button class="btn btn-primary" id="btn-merge" style="margin-top: 12px;">🔀 Combinar</button>
+
+      <div id="merge-result"></div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation (mobile) -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-inner">
+      <button class="nav-btn active" id="nav-schedule">
+        <span class="nav-icon">📅</span>
+        <span>Grilla</span>
+      </button>
+      <button class="nav-btn" id="nav-my-schedule">
+        <span class="nav-icon">🎵</span>
+        <span>Mi Agenda</span>
+        <span class="nav-badge" id="selection-count">0</span>
+      </button>
+      <button class="nav-btn" id="nav-merge">
+        <span class="nav-icon">🤝</span>
+        <span>Combinar</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- App Script -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
