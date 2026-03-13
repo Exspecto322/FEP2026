@@ -1409,26 +1409,91 @@ input, textarea {
 
 /* ── Artist Tier Badge (grid) ── */
 .artist-tier {
-  font-size: 0.55rem;
+  font-size: 0.5rem;
   font-weight: 700;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.06em;
   position: relative;
   z-index: 1;
-  margin-top: 2px;
-  opacity: 0.9;
+  margin-top: 1px;
+  opacity: 0.85;
+  text-transform: uppercase;
+}
+
+/* ── Tier Hue Tinting (grid blocks) ── */
+.artist-block.tier-headliner {
+  background: rgba(255, 215, 0, 0.08);
+  border-color: rgba(255, 215, 0, 0.18);
+}
+.artist-block.tier-headliner::before {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), transparent);
+  opacity: 0.3;
+}
+
+.artist-block.tier-top {
+  background: rgba(255, 109, 0, 0.06);
+  border-color: rgba(255, 109, 0, 0.15);
+}
+.artist-block.tier-top::before {
+  background: linear-gradient(135deg, rgba(255, 109, 0, 0.12), transparent);
+  opacity: 0.25;
+}
+
+.artist-block.tier-mid {
+  background: rgba(179, 136, 255, 0.04);
+  border-color: rgba(179, 136, 255, 0.1);
+}
+
+.artist-block.tier-emerging {
+  /* default look, very subtle */
+}
+
+/* Headliner shimmer on hover */
+.artist-block.tier-headliner:hover {
+  box-shadow: 0 4px 24px rgba(255, 215, 0, 0.15);
+  border-color: rgba(255, 215, 0, 0.3);
+}
+.artist-block.tier-top:hover {
+  box-shadow: 0 4px 20px rgba(255, 109, 0, 0.12);
+  border-color: rgba(255, 109, 0, 0.25);
+}
+
+/* ── Tier Hue Tinting (list rows) ── */
+.list-row.tier-headliner {
+  background: rgba(255, 215, 0, 0.06);
+  border-left: 3px solid rgba(255, 215, 0, 0.4);
+}
+.list-row.tier-headliner:hover {
+  background: rgba(255, 215, 0, 0.1);
+}
+
+.list-row.tier-top {
+  background: rgba(255, 109, 0, 0.04);
+  border-left: 3px solid rgba(255, 109, 0, 0.3);
+}
+.list-row.tier-top:hover {
+  background: rgba(255, 109, 0, 0.08);
+}
+
+.list-row.tier-mid {
+  border-left: 3px solid rgba(179, 136, 255, 0.2);
+}
+
+.list-row.tier-emerging {
+  border-left: 3px solid rgba(77, 208, 225, 0.15);
 }
 
 /* ── List Tier Badge ── */
 .list-tier-badge {
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   font-weight: 700;
-  padding: 1px 6px;
+  padding: 2px 6px;
   border-radius: 4px;
   border: 1px solid;
-  min-width: 24px;
   text-align: center;
   flex-shrink: 0;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 /* ── Merge Panel Improvements ── */

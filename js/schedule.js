@@ -91,6 +91,10 @@ function createArtistBlock(artist, stage, selectedIds, onToggle) {
   block.style.height = `${Math.max(height, 30)}px`;
   block.style.setProperty('--stage-color', stage.color);
 
+  // Add tier CSS class for hue tinting
+  const tierInfo = TIERS[artist.tier];
+  block.classList.add(tierInfo.css);
+
   if (selectedIds.has(artist.id)) {
     block.classList.add('selected');
   }
@@ -102,12 +106,11 @@ function createArtistBlock(artist, stage, selectedIds, onToggle) {
   }
 
   const timeStr = `${artist.startTime} – ${artist.endTime}`;
-  const tierInfo = TIERS[artist.tier];
-  const showTier = artist.tier === 'headliner' || artist.tier === 'top';
+  const showTierLabel = height >= 50; // Only show label if block is tall enough
   block.innerHTML = `
     <span class="artist-time">${timeStr}</span>
     <span class="artist-name">${artist.name}</span>
-    ${showTier ? `<span class="artist-tier" style="color:${tierInfo.color}">${tierInfo.label}</span>` : ''}
+    ${showTierLabel ? `<span class="artist-tier" style="color:${tierInfo.color}">${tierInfo.short}</span>` : ''}
   `;
 
   block.addEventListener('click', (e) => {
@@ -234,6 +237,7 @@ export function renderScheduleList(dayId, selectedIds, onToggle) {
 
     const stage = getStage(artist.stage);
     const isSelected = selectedIds.has(artist.id);
+    const tierInfo = TIERS[artist.tier];
 
     // Check conflict
     let hasConflict = false;
@@ -250,17 +254,15 @@ export function renderScheduleList(dayId, selectedIds, onToggle) {
     }
 
     const row = document.createElement('button');
-    row.className = `list-row${isSelected ? ' selected' : ''}${hasConflict ? ' conflict' : ''}`;
+    row.className = `list-row ${tierInfo.css}${isSelected ? ' selected' : ''}${hasConflict ? ' conflict' : ''}`;
     row.dataset.artistId = artist.id;
     row.style.setProperty('--stage-color', stage.color);
-
-    const tierInfo = TIERS[artist.tier];
 
     row.innerHTML = `
       <span class="list-check">${isSelected ? '✓' : ''}</span>
       <span class="list-time">${artist.startTime} – ${artist.endTime}</span>
       <span class="list-name">${artist.name}</span>
-      <span class="list-tier-badge" style="background: ${tierInfo.color}20; color: ${tierInfo.color}; border-color: ${tierInfo.color}40">${tierInfo.abbr}</span>
+      <span class="list-tier-badge" style="background: ${tierInfo.color}20; color: ${tierInfo.color}; border-color: ${tierInfo.color}40">${tierInfo.short}</span>
       <span class="list-stage" style="color: ${stage.color}">
         <span class="list-stage-dot" style="background: ${stage.color}"></span>
         ${stage.name}

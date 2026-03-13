@@ -29,10 +29,10 @@ export const GENRES = [
 
 // Artist tiers based on flyer billing
 export const TIERS = {
-  headliner: { label: '⭐ Headliner', color: '#FFD700', abbr: 'H' },
-  top:       { label: '🔥 Top', color: '#FF6D00', abbr: 'T' },
-  mid:       { label: '✦ Mid', color: '#B388FF', abbr: 'M' },
-  emerging:  { label: '◆ Emerging', color: '#4DD0E1', abbr: 'E' },
+  headliner: { label: '⭐ Headliner', color: '#FFD700', short: 'HEADLINER', css: 'tier-headliner' },
+  top:       { label: '🔥 Top', color: '#FF6D00', short: 'TOP', css: 'tier-top' },
+  mid:       { label: '✦ Mid', color: '#B388FF', short: 'MID', css: 'tier-mid' },
+  emerging:  { label: '◆ Emerging', color: '#4DD0E1', short: 'NEW', css: 'tier-emerging' },
 };
 
 let _id = 0;
