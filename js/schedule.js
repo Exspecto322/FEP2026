@@ -169,14 +169,15 @@ export function getConflicts(selectedIds, artists) {
  * Update visual states after selection change
  */
 export function updateSelectionVisuals(selectedIds) {
-  document.querySelectorAll('.artist-block').forEach(block => {
-    const id = parseInt(block.dataset.artistId);
-    block.classList.toggle('selected', selectedIds.has(id));
+  // Update both grid blocks and list rows
+  document.querySelectorAll('.artist-block, .list-row').forEach(el => {
+    const id = parseInt(el.dataset.artistId);
+    el.classList.toggle('selected', selectedIds.has(id));
   });
 
-  // Re-check conflicts
-  document.querySelectorAll('.artist-block.selected').forEach(block => {
-    const id = parseInt(block.dataset.artistId);
+  // Re-check conflicts for selected items
+  document.querySelectorAll('.artist-block.selected, .list-row.selected').forEach(el => {
+    const id = parseInt(el.dataset.artistId);
     const artist = window._fepData?.ARTISTS?.find(a => a.id === id);
     if (!artist) return;
 
@@ -190,6 +191,82 @@ export function updateSelectionVisuals(selectedIds) {
         break;
       }
     }
-    block.classList.toggle('conflict', hasConflict);
+    el.classList.toggle('conflict', hasConflict);
   });
+}
+
+/**
+ * Render the compact list view for a given day
+ */
+export function renderScheduleList(dayId, selectedIds, onToggle) {
+  const container = document.getElementById('schedule-grid');
+  container.innerHTML = '';
+  container.className = 'schedule-list-view';
+
+  const artists = getArtistsByDay(dayId)
+    .filter(a => !a.genres.includes('performance'))
+    .sort((a, b) => {
+      const ta = timeToMinutes(a.startTime);
+      const tb = timeToMinutes(b.startTime);
+      if (ta !== tb) return ta - tb;
+      return a.stage.localeCompare(b.stage);
+    });
+
+  // Group by time slot (hour)
+  let currentHour = -1;
+
+  for (const artist of artists) {
+    const startMin = timeToMinutes(artist.startTime);
+    const hour = Math.floor(startMin / 60);
+
+    // Add hour separator
+    if (hour !== currentHour) {
+      currentHour = hour;
+      const displayH = hour >= 24 ? hour - 24 : hour;
+      const separator = document.createElement('div');
+      separator.className = 'list-hour-separator';
+      separator.textContent = `${String(displayH).padStart(2, '0')}:00`;
+      container.appendChild(separator);
+    }
+
+    const stage = getStage(artist.stage);
+    const isSelected = selectedIds.has(artist.id);
+
+    // Check conflict
+    let hasConflict = false;
+    if (isSelected) {
+      for (const otherId of selectedIds) {
+        if (otherId === artist.id) continue;
+        const other = window._fepData?.ARTISTS?.find(a => a.id === otherId);
+        if (!other || other.day !== artist.day) continue;
+        if (timesOverlap(artist.startTime, artist.endTime, other.startTime, other.endTime)) {
+          hasConflict = true;
+          break;
+        }
+      }
+    }
+
+    const row = document.createElement('button');
+    row.className = `list-row${isSelected ? ' selected' : ''}${hasConflict ? ' conflict' : ''}`;
+    row.dataset.artistId = artist.id;
+    row.style.setProperty('--stage-color', stage.color);
+
+    row.innerHTML = `
+      <span class="list-check">${isSelected ? '✓' : ''}</span>
+      <span class="list-time">${artist.startTime} – ${artist.endTime}</span>
+      <span class="list-name">${artist.name}</span>
+      <span class="list-stage" style="color: ${stage.color}">
+        <span class="list-stage-dot" style="background: ${stage.color}"></span>
+        ${stage.name}
+      </span>
+      <span class="list-genres">${artist.genres.slice(0, 3).join(' · ')}</span>
+    `;
+
+    row.addEventListener('click', (e) => {
+      e.preventDefault();
+      onToggle(artist.id);
+    });
+
+    container.appendChild(row);
+  }
 }

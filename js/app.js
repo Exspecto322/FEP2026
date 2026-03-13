@@ -3,7 +3,7 @@
 // ============================================================
 
 import { ARTISTS, DAYS, STAGES, getArtistById, getArtistsByDay, timesOverlap } from './data.js';
-import { renderScheduleGrid, updateSelectionVisuals, getConflicts } from './schedule.js';
+import { renderScheduleGrid, renderScheduleList, updateSelectionVisuals, getConflicts } from './schedule.js';
 import { encodeSeed, decodeSeed, saveToHash, loadFromHash, saveToStorage, loadFromStorage, getShareableURL, exportAsText } from './seed.js';
 import { parseMergeInputs, mergeSchedules, generateRoutePlan, renderMergedSchedule } from './merge.js';
 import { renderRecommendations } from './recommend.js';
@@ -16,6 +16,7 @@ window._fepData = { ARTISTS };
 let selectedIds = new Set();
 let currentDay = 'friday';
 let currentView = 'schedule'; // 'schedule' | 'my-schedule' | 'merge'
+let currentLayout = 'grid'; // 'grid' | 'list'
 
 // ============================================================
 // Initialization
@@ -32,6 +33,7 @@ function init() {
 
   setupDayTabs();
   setupNavigation();
+  setupViewToggle();
   setupMergePanel();
   setupSharePanel();
   setupSearch();
@@ -110,7 +112,27 @@ function setView(view) {
 // Schedule Rendering
 // ============================================================
 function renderCurrentDay() {
-  renderScheduleGrid(currentDay, selectedIds, toggleArtist);
+  if (currentLayout === 'list') {
+    renderScheduleList(currentDay, selectedIds, toggleArtist);
+  } else {
+    renderScheduleGrid(currentDay, selectedIds, toggleArtist);
+  }
+}
+
+// ============================================================
+// View Toggle (Grid ↔ List)
+// ============================================================
+function setupViewToggle() {
+  const toggle = document.getElementById('view-toggle');
+  if (!toggle) return;
+
+  toggle.addEventListener('click', () => {
+    currentLayout = currentLayout === 'grid' ? 'list' : 'grid';
+    toggle.setAttribute('aria-label', currentLayout === 'grid' ? 'Cambiar a lista' : 'Cambiar a grilla');
+    toggle.querySelector('.toggle-icon').textContent = currentLayout === 'grid' ? '☰' : '▦';
+    toggle.querySelector('.toggle-label').textContent = currentLayout === 'grid' ? 'Lista' : 'Grilla';
+    renderCurrentDay();
+  });
 }
 
 // ============================================================

@@ -38,8 +38,14 @@
     </div>
   </header>
 
-  <!-- Day Tabs -->
-  <div class="day-tabs-wrapper" id="day-tabs"></div>
+  <!-- Day Tabs + View Toggle -->
+  <div class="day-tabs-wrapper">
+    <div id="day-tabs" class="day-tabs-inner"></div>
+    <button class="view-toggle" id="view-toggle" aria-label="Cambiar a lista" title="Cambiar vista">
+      <span class="toggle-icon">☰</span>
+      <span class="toggle-label">Lista</span>
+    </button>
+  </div>
 
   <!-- Schedule View (default) -->
   <div class="view-panel active" id="panel-schedule">
