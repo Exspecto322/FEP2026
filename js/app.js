@@ -332,48 +332,83 @@ function setupSharePanel() {
 // Merge Panel
 // ============================================================
 function setupMergePanel() {
-  const mergeBtn = document.getElementById('btn-merge');
-  
-  mergeBtn?.addEventListener('click', () => {
-    const input1 = document.getElementById('merge-input-1')?.value?.trim();
-    const input2 = document.getElementById('merge-input-2')?.value?.trim();
-    const input3 = document.getElementById('merge-input-3')?.value?.trim();
+  // Initialize both desktop and mobile merge panels
+  const panels = [
+    { container: 'merge-inputs-desktop', addBtn: 'btn-add-merge-desktop', mergeBtn: 'btn-merge-desktop', result: 'merge-result-desktop' },
+    { container: 'merge-inputs-mobile', addBtn: 'btn-add-merge-mobile', mergeBtn: 'btn-merge-mobile', result: 'merge-result-mobile' },
+  ];
 
-    const inputs = [input1, input2, input3].filter(Boolean);
-    if (inputs.length < 2) {
-      showToast('Necesitas al menos 2 agendas para combinar');
-      return;
+  for (const panel of panels) {
+    const container = document.getElementById(panel.container);
+    if (!container) continue;
+
+    // Add initial 2 inputs
+    addMergeInput(container, 1);
+    addMergeInput(container, 2);
+
+    // Add person button
+    document.getElementById(panel.addBtn)?.addEventListener('click', () => {
+      const count = container.querySelectorAll('.merge-input-row').length;
+      addMergeInput(container, count + 1);
+    });
+
+    // Merge button
+    document.getElementById(panel.mergeBtn)?.addEventListener('click', () => {
+      const inputEls = container.querySelectorAll('.merge-input-row input');
+      const inputs = [...inputEls].map(el => el.value.trim()).filter(Boolean);
+
+      if (inputs.length < 2) {
+        showToast('Necesitas al menos 2 agendas para combinar');
+        return;
+      }
+
+      const schedules = parseMergeInputs(inputs);
+      const merged = mergeSchedules(schedules);
+      const resultEl = document.getElementById(panel.result);
+
+      resultEl.innerHTML = '';
+
+      const dayLabels = { friday: 'Viernes 20', saturday: 'Sábado 21', sunday: 'Domingo 22' };
+      for (const [dayId, dayLabel] of Object.entries(dayLabels)) {
+        const dayMerged = merged.filter(m => m.artist.day === dayId);
+        if (dayMerged.length === 0) continue;
+
+        const daySection = document.createElement('div');
+        daySection.className = 'merge-day-section';
+        daySection.innerHTML = `<h2>${dayLabel}</h2>`;
+
+        const route = generateRoutePlan(schedules, dayId);
+        renderMergedSchedule(dayMerged, route, daySection);
+        resultEl.appendChild(daySection);
+      }
+    });
+  }
+}
+
+function addMergeInput(container, num) {
+  const row = document.createElement('div');
+  row.className = 'merge-input-row';
+  row.innerHTML = `
+    <input type="text" placeholder="Seed o URL — Persona ${num}">
+    <button class="btn btn-secondary btn-sm merge-use-mine" title="Usar mi agenda">🎵</button>
+    <button class="btn btn-secondary btn-sm merge-remove-row" title="Quitar">✕</button>
+  `;
+
+  // "Use mine" button
+  row.querySelector('.merge-use-mine').addEventListener('click', () => {
+    row.querySelector('input').value = encodeSeed(selectedIds);
+  });
+
+  // Remove row button (only if more than 2 inputs remain)
+  row.querySelector('.merge-remove-row').addEventListener('click', () => {
+    if (container.querySelectorAll('.merge-input-row').length > 2) {
+      row.remove();
+    } else {
+      showToast('Necesitas al menos 2 campos');
     }
-
-    const schedules = parseMergeInputs(inputs);
-    const merged = mergeSchedules(schedules);
-    const resultEl = document.getElementById('merge-result');
-
-    // Render per day
-    resultEl.innerHTML = '';
-    
-    const dayLabels = { friday: 'Viernes 20', saturday: 'Sábado 21', sunday: 'Domingo 22' };
-    for (const [dayId, dayLabel] of Object.entries(dayLabels)) {
-      const dayMerged = merged.filter(m => m.artist.day === dayId);
-      if (dayMerged.length === 0) continue;
-
-      const daySection = document.createElement('div');
-      daySection.className = 'merge-day-section';
-      daySection.innerHTML = `<h2>${dayLabel}</h2>`;
-
-      const route = generateRoutePlan(schedules, dayId);
-      renderMergedSchedule(dayMerged, route, daySection);
-      resultEl.appendChild(daySection);
-    }
   });
 
-  // "Use my schedule" buttons
-  document.getElementById('btn-use-mine-1')?.addEventListener('click', () => {
-    document.getElementById('merge-input-1').value = encodeSeed(selectedIds);
-  });
-  document.getElementById('btn-use-mine-2')?.addEventListener('click', () => {
-    document.getElementById('merge-input-2').value = encodeSeed(selectedIds);
-  });
+  container.appendChild(row);
 }
 
 // ============================================================

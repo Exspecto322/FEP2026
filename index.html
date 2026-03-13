@@ -76,6 +76,18 @@
           </div>
         </div>
 
+        <!-- Merge (desktop) -->
+        <div class="sidebar-section">
+          <h3>🤝 Combinar Agendas</h3>
+          <p style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 10px;">Compara agendas con amigos</p>
+          <div id="merge-inputs-desktop" class="merge-inputs-container"></div>
+          <div class="merge-actions">
+            <button class="btn btn-secondary btn-sm" id="btn-add-merge-desktop">➕ Añadir persona</button>
+            <button class="btn btn-primary btn-sm" id="btn-merge-desktop">🔀 Combinar</button>
+          </div>
+          <div id="merge-result-desktop"></div>
+        </div>
+
         <!-- Recommendations -->
         <div class="sidebar-section">
           <div id="recommendations"></div>
@@ -116,21 +128,13 @@
       <h2 style="font-family: 'Outfit', sans-serif; font-weight: 800; margin-bottom: 8px;">🤝 Combinar Agendas</h2>
       <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 16px;">Pega los seeds o URLs de tus amigos para ver la ruta del grupo</p>
       
-      <div class="merge-input-row">
-        <input type="text" id="merge-input-1" placeholder="Seed o URL — Persona 1">
-        <button class="btn btn-secondary btn-sm" id="btn-use-mine-1">Usar mía</button>
+      <div id="merge-inputs-mobile" class="merge-inputs-container"></div>
+      <div class="merge-actions">
+        <button class="btn btn-secondary btn-sm" id="btn-add-merge-mobile">➕ Añadir persona</button>
+        <button class="btn btn-primary" id="btn-merge-mobile" style="margin-top: 12px;">🔀 Combinar</button>
       </div>
-      <div class="merge-input-row">
-        <input type="text" id="merge-input-2" placeholder="Seed o URL — Persona 2">
-        <button class="btn btn-secondary btn-sm" id="btn-use-mine-2">Usar mía</button>
-      </div>
-      <div class="merge-input-row">
-        <input type="text" id="merge-input-3" placeholder="Seed o URL — Persona 3 (opcional)">
-      </div>
-      
-      <button class="btn btn-primary" id="btn-merge" style="margin-top: 12px;">🔀 Combinar</button>
 
-      <div id="merge-result"></div>
+      <div id="merge-result-mobile"></div>
     </div>
   </div>
 

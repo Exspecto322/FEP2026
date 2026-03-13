@@ -2,7 +2,7 @@
 // FEP2026 — Schedule Grid Rendering & Interactions
 // ============================================================
 
-import { STAGES, DAYS, getArtistsByDay, getStage, timeToMinutes, timesOverlap } from './data.js';
+import { STAGES, DAYS, TIERS, getArtistsByDay, getStage, timeToMinutes, timesOverlap } from './data.js';
 
 const GRID_START = 14 * 60;  // 14:00  
 const GRID_END = (24 + 3) * 60; // 03:00 next day
@@ -102,9 +102,12 @@ function createArtistBlock(artist, stage, selectedIds, onToggle) {
   }
 
   const timeStr = `${artist.startTime} – ${artist.endTime}`;
+  const tierInfo = TIERS[artist.tier];
+  const showTier = artist.tier === 'headliner' || artist.tier === 'top';
   block.innerHTML = `
     <span class="artist-time">${timeStr}</span>
     <span class="artist-name">${artist.name}</span>
+    ${showTier ? `<span class="artist-tier" style="color:${tierInfo.color}">${tierInfo.label}</span>` : ''}
   `;
 
   block.addEventListener('click', (e) => {
@@ -251,10 +254,13 @@ export function renderScheduleList(dayId, selectedIds, onToggle) {
     row.dataset.artistId = artist.id;
     row.style.setProperty('--stage-color', stage.color);
 
+    const tierInfo = TIERS[artist.tier];
+
     row.innerHTML = `
       <span class="list-check">${isSelected ? '✓' : ''}</span>
       <span class="list-time">${artist.startTime} – ${artist.endTime}</span>
       <span class="list-name">${artist.name}</span>
+      <span class="list-tier-badge" style="background: ${tierInfo.color}20; color: ${tierInfo.color}; border-color: ${tierInfo.color}40">${tierInfo.abbr}</span>
       <span class="list-stage" style="color: ${stage.color}">
         <span class="list-stage-dot" style="background: ${stage.color}"></span>
         ${stage.name}

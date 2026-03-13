@@ -1406,3 +1406,77 @@ input, textarea {
     display: none;
   }
 }
+
+/* ── Artist Tier Badge (grid) ── */
+.artist-tier {
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  position: relative;
+  z-index: 1;
+  margin-top: 2px;
+  opacity: 0.9;
+}
+
+/* ── List Tier Badge ── */
+.list-tier-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid;
+  min-width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+  letter-spacing: 0.03em;
+}
+
+/* ── Merge Panel Improvements ── */
+.merge-inputs-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.merge-input-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.merge-input-row input {
+  flex: 1;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-glass);
+  font-size: 0.8rem;
+  outline: none;
+  transition: border-color 0.2s;
+  min-width: 0;
+}
+
+.merge-input-row input:focus {
+  border-color: var(--selected);
+}
+
+.merge-use-mine,
+.merge-remove-row {
+  flex-shrink: 0;
+  padding: 6px 8px !important;
+  font-size: 0.75rem !important;
+}
+
+.merge-remove-row:hover {
+  color: var(--conflict) !important;
+  border-color: var(--conflict) !important;
+}
+
+.merge-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
