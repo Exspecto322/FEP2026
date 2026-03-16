@@ -191,11 +191,12 @@ const CLUB_VENUE_TO_LOCATION = {
 };
 
 const PATH_NODES = {
+  'festival-entry-node': { id: 'festival-entry-node', x: 6.9, y: 40.1 },
   'west-gate': { id: 'west-gate', x: 9.2, y: 40.6 },
   'west-inner': { id: 'west-inner', x: 14.3, y: 40.0 },
   'west-curve': { id: 'west-curve', x: 19.6, y: 39.8 },
   'bosque-hub': { id: 'bosque-hub', x: 25.1, y: 38.7 },
-  'bosque-stage': { id: 'bosque-stage', x: 26.0, y: 33.3 },
+  'bosque-stage': { id: 'bosque-stage', x: 25.7, y: 35.8 },
   'north-west-1': { id: 'north-west-1', x: 31.2, y: 34.9 },
   'north-west-2': { id: 'north-west-2', x: 37.4, y: 30.8 },
   'north-west-3': { id: 'north-west-3', x: 44.3, y: 26.8 },
@@ -203,19 +204,19 @@ const PATH_NODES = {
   'north-center-2': { id: 'north-center-2', x: 58.1, y: 23.4 },
   'north-arc-1': { id: 'north-arc-1', x: 65.1, y: 23.0 },
   'north-arc-2': { id: 'north-arc-2', x: 72.2, y: 23.1 },
-  'aora-node': { id: 'aora-node', x: 60.8, y: 28.8 },
-  'rompe-node': { id: 'rompe-node', x: 60.8, y: 36.6 },
-  'lago-node': { id: 'lago-node', x: 69.5, y: 29.4 },
+  'aora-node': { id: 'aora-node', x: 60.1, y: 31.0 },
+  'rompe-node': { id: 'rompe-node', x: 61.4, y: 38.4 },
+  'lago-node': { id: 'lago-node', x: 67.7, y: 31.5 },
   'east-upper-1': { id: 'east-upper-1', x: 76.3, y: 29.6 },
   'east-upper-2': { id: 'east-upper-2', x: 81.4, y: 31.7 },
-  'paramo-node': { id: 'paramo-node', x: 84.0, y: 38.8 },
-  'fb-node': { id: 'fb-node', x: 93.7, y: 41.2 },
+  'paramo-node': { id: 'paramo-node', x: 82.0, y: 42.8 },
+  'fb-node': { id: 'fb-node', x: 91.4, y: 43.4 },
   'center-west': { id: 'center-west', x: 33.0, y: 45.4 },
   'center-mid-1': { id: 'center-mid-1', x: 41.2, y: 47.0 },
   'center-mid-2': { id: 'center-mid-2', x: 48.8, y: 46.3 },
   'center-hub': { id: 'center-hub', x: 56.2, y: 43.8 },
   'center-east': { id: 'center-east', x: 62.2, y: 45.1 },
-  'coke-node': { id: 'coke-node', x: 66.3, y: 48.2 },
+  'coke-node': { id: 'coke-node', x: 65.1, y: 50.0 },
   'east-mid-1': { id: 'east-mid-1', x: 72.9, y: 48.7 },
   'east-mid': { id: 'east-mid', x: 79.8, y: 49.5 },
   'east-descent-1': { id: 'east-descent-1', x: 76.8, y: 60.8 },
@@ -223,14 +224,14 @@ const PATH_NODES = {
   'south-west-1': { id: 'south-west-1', x: 30.6, y: 52.8 },
   'south-west-2': { id: 'south-west-2', x: 34.0, y: 58.5 },
   'south-west': { id: 'south-west', x: 39.8, y: 62.4 },
-  'umd-node': { id: 'umd-node', x: 38.3, y: 63.7 },
+  'umd-node': { id: 'umd-node', x: 38.8, y: 60.9 },
   'south-center-1': { id: 'south-center-1', x: 53.9, y: 55.4 },
   'south-center-2': { id: 'south-center-2', x: 54.7, y: 62.8 },
   'south-center': { id: 'south-center', x: 55.6, y: 68.0 },
   'south-east-1': { id: 'south-east-1', x: 61.7, y: 70.8 },
   'south-east': { id: 'south-east', x: 68.4, y: 75.0 },
   'ep-approach': { id: 'ep-approach', x: 79.8, y: 77.2 },
-  'ep-node': { id: 'ep-node', x: 88.7, y: 78.8 },
+  'ep-node': { id: 'ep-node', x: 85.2, y: 78.4 },
   'vip-corridor': { id: 'vip-corridor', x: 56.6, y: 84.7 },
   'vip-entry': { id: 'vip-entry', x: 58.7, y: 92.6 },
   'general-corridor': { id: 'general-corridor', x: 68.8, y: 87.0 },
@@ -240,6 +241,7 @@ const PATH_NODES = {
 };
 
 const PATH_EDGES = [
+  ['festival-entry-node', 'west-gate'],
   ['west-gate', 'west-inner'],
   ['west-inner', 'west-curve'],
   ['west-curve', 'bosque-hub'],
@@ -295,6 +297,10 @@ const PATH_EDGES = [
 ];
 
 const LOCATION_TO_PATH_NODE = {
+  'entrance-festival': 'festival-entry-node',
+  'entrance-vip': 'vip-entry',
+  'entrance-general': 'general-entry',
+  'entrance-futuro': 'futuro-entry',
   'stage-bosque': 'bosque-stage',
   'stage-un-mundo-distinto': 'umd-node',
   'stage-lago': 'lago-node',
@@ -373,6 +379,17 @@ function getConnectorNodeId(location) {
   return LOCATION_TO_PATH_NODE[location.id] || getNearestPathNodeId(location);
 }
 
+function getRouteAnchor(location) {
+  if (!location) return null;
+  const connectorNode = PATH_NODES[getConnectorNodeId(location)];
+  if (!connectorNode) return location;
+  return {
+    ...location,
+    x: connectorNode.x,
+    y: connectorNode.y,
+  };
+}
+
 function findPathNodeSequence(startNodeId, endNodeId) {
   if (!startNodeId || !endNodeId) return [];
   if (startNodeId === endNodeId) return [startNodeId];
@@ -429,7 +446,9 @@ function dedupeSequentialPoints(points) {
 
 function getRoutePointsBetweenLocations(from, to) {
   if (!from || !to) return [];
-  if (from.id === to.id) return [from, to];
+  const fromAnchor = getRouteAnchor(from);
+  const toAnchor = getRouteAnchor(to);
+  if (from.id === to.id) return [fromAnchor, toAnchor];
 
   const startNodeId = getConnectorNodeId(from);
   const endNodeId = getConnectorNodeId(to);
@@ -437,7 +456,7 @@ function getRoutePointsBetweenLocations(from, to) {
     .map(nodeId => PATH_NODES[nodeId])
     .filter(Boolean);
 
-  return dedupeSequentialPoints([from, ...nodeSequence, to]);
+  return dedupeSequentialPoints([fromAnchor, ...nodeSequence, toAnchor]);
 }
 
 function getPathLength(points) {
@@ -822,7 +841,7 @@ function buildRoundedPath(points) {
     const next = deduped[index + 1];
     const prevDistance = Math.hypot(current.x - previous.x, current.y - previous.y);
     const nextDistance = Math.hypot(next.x - current.x, next.y - current.y);
-    const radius = Math.min(1.3, prevDistance * 0.35, nextDistance * 0.35);
+    const radius = Math.min(0.45, prevDistance * 0.22, nextDistance * 0.22);
     const entry = offsetPoint(current, previous, radius);
     const exit = offsetPoint(current, next, radius);
 
@@ -1101,10 +1120,11 @@ function renderMapNodes(target, visibleLayers, routeData) {
     const isStart = location.id === firstRouteStopId;
     const isEnd = location.id === lastStopId && location.id !== FESTIVAL_ENTRY_ID;
     const isRepeat = repeatLocations.has(location.id);
+    const point = isRoute || isSplit ? getRouteAnchor(location) : location;
     const node = document.createElement('div');
     node.className = `map-node ${visibleLayers.has(location.category) && !isRoute ? 'is-layer' : ''} ${isRoute ? 'is-route' : ''} ${isSplit ? 'is-split' : ''} ${isSuggested ? 'is-suggested' : ''} ${isEntry ? 'is-entry' : ''} ${isStart ? 'is-start' : ''} ${isEnd ? 'is-end' : ''} ${isRepeat ? 'is-repeat' : ''}`;
-    node.style.left = `${location.x}%`;
-    node.style.top = `${location.y}%`;
+    node.style.left = `${point.x}%`;
+    node.style.top = `${point.y}%`;
     node.style.setProperty('--node-color', meta.color);
     if (suggestion) {
       node.style.setProperty('--suggestion-color', suggestion.color);
@@ -1285,7 +1305,7 @@ function drawRouteOnCanvas(ctx, routeData, mode, rect) {
   const lastStopId = orderedStops[orderedStops.length - 1]?.id || '';
 
   routeData.pathLocations
-    .map(location => scalePointToRect(location, rect))
+    .map(location => scalePointToRect(getRouteAnchor(location), rect))
     .forEach((location, index) => {
       const originalLocation = routeData.pathLocations[index];
       const isEntry = index === 0 && originalLocation.id === FESTIVAL_ENTRY_ID;
