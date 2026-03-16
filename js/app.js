@@ -434,6 +434,9 @@ function rerenderMap() {
     mapMode: currentMapMode,
     mergeState: latestMergeState,
     visibleLayers: visibleMapLayers,
+    shareUrl: selectedIds.size > 0 ? getShareableURL(selectedIds) : '',
+    selectionSeed: selectedIds.size > 0 ? encodeSeed(selectedIds) : '',
+    onToast: showToast,
     onSetMode: (mode) => {
       currentMapMode = mode;
       rerenderMap();

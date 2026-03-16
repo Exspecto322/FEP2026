@@ -12,7 +12,36 @@ const MAP_REFERENCE = {
   walkingMetersPerMinute: 72,
 };
 
+const MAP_IMAGE_SRC = 'assets/images/map/fep-site-map.png';
+
 export const DEFAULT_MAP_LAYERS = [];
+
+const SUPPORT_STOP_META = {
+  food: {
+    icon: '🍔',
+    label: 'Comida',
+    badgeLabel: 'Comer',
+    color: '#FF8A00',
+  },
+  water: {
+    icon: '💧',
+    label: 'Agua',
+    badgeLabel: 'Agua',
+    color: '#7CE7FF',
+  },
+  bathroom: {
+    icon: '🚻',
+    label: 'Baños',
+    badgeLabel: 'Baños',
+    color: '#4DD0FF',
+  },
+  service: {
+    icon: '◎',
+    label: 'Servicios',
+    badgeLabel: 'Extra',
+    color: '#64E38B',
+  },
+};
 
 const MAP_LAYER_META = {
   stage: {
@@ -397,6 +426,154 @@ function getNearestLocation(location, category) {
   }, null);
 }
 
+function getItemSupport(location) {
+  return {
+    nearbyFood: location ? getNearestLocation(location, 'food') : null,
+    nearbyWater: location ? getNearestLocation(location, 'water') : null,
+    nearbyBathroom: location ? getNearestLocation(location, 'bathroom') : null,
+    nearbyService: location ? getNearestLocation(location, 'service') : null,
+  };
+}
+
+function getRouteGapMinutes(currentItem, nextItem) {
+  if (!currentItem || !nextItem) return 0;
+  return Math.max(0, timeToMinutes(nextItem.startTime) - timeToMinutes(currentItem.endTime));
+}
+
+function getServiceSuggestionTitle(location) {
+  const normalized = normalizeLabel(location?.label || '');
+  if (normalized.includes('cashless')) return 'Recarga cashless';
+  if (normalized.includes('oasis')) return 'Pausa y recuperación';
+  if (normalized.includes('merch')) return 'Punto útil al paso';
+  return 'Parada útil';
+}
+
+function getServiceSuggestionBadge(location) {
+  const normalized = normalizeLabel(location?.label || '');
+  if (normalized.includes('cashless')) return 'Cashless';
+  if (normalized.includes('oasis')) return 'Oasis';
+  if (normalized.includes('merch')) return 'Merch';
+  return 'Extra';
+}
+
+function createSupportSuggestion(type, location, title, reason) {
+  if (!location) return null;
+  const meta = SUPPORT_STOP_META[type];
+  const badgeLabel = type === 'service' ? getServiceSuggestionBadge(location) : meta.badgeLabel;
+  return {
+    id: `${type}-${location.id}`,
+    type,
+    icon: meta.icon,
+    color: meta.color,
+    label: meta.label,
+    badgeLabel,
+    title,
+    reason,
+    location,
+  };
+}
+
+function pushSuggestion(suggestions, usedLocationIds, suggestion) {
+  if (!suggestion?.location || usedLocationIds.has(suggestion.location.id)) {
+    return false;
+  }
+
+  suggestions.push(suggestion);
+  usedLocationIds.add(suggestion.location.id);
+  return true;
+}
+
+function buildRouteSuggestions(items, segments) {
+  if (items.length === 0) return [];
+
+  const suggestions = [];
+  const usedLocationIds = new Set();
+  const gaps = items.slice(0, -1).map((item, index) => ({
+    item,
+    next: items[index + 1],
+    gapMinutes: getRouteGapMinutes(item, items[index + 1]),
+    segment: segments[index],
+  }));
+
+  const mealCandidate = gaps
+    .filter(entry => entry.gapMinutes >= 35)
+    .sort((a, b) => b.gapMinutes - a.gapMinutes)[0];
+
+  if (mealCandidate) {
+    pushSuggestion(
+      suggestions,
+      usedLocationIds,
+      createSupportSuggestion(
+        'food',
+        mealCandidate.item.nearbyFood || mealCandidate.next.nearbyFood,
+        'Ventana para comer',
+        `${mealCandidate.gapMinutes} min libres entre ${mealCandidate.item.title} y ${mealCandidate.next.title}.`
+      )
+    );
+  }
+
+  if (!suggestions.some(suggestion => suggestion.type === 'food')) {
+    const anchor = items[Math.min(items.length - 1, Math.floor(items.length / 2))];
+    pushSuggestion(
+      suggestions,
+      usedLocationIds,
+      createSupportSuggestion(
+        'food',
+        anchor?.nearbyFood,
+        'Comida a mano',
+        anchor ? `Te queda cerca al pasar por ${anchor.title}.` : 'Queda al paso dentro de tu ruta.'
+      )
+    );
+  }
+
+  const longestSegment = segments.slice().sort((a, b) => b.walkMinutes - a.walkMinutes)[0];
+  if (longestSegment) {
+    const destinationItem = items.find(item => item.location?.id === longestSegment.to.id) || items[0];
+    pushSuggestion(
+      suggestions,
+      usedLocationIds,
+      createSupportSuggestion(
+        'water',
+        destinationItem?.nearbyWater || getNearestLocation(longestSegment.to, 'water'),
+        'Hidratación antes del tramo largo',
+        `El cambio hacia ${longestSegment.to.shortLabel} suma ~${longestSegment.walkMinutes} min caminando.`
+      )
+    );
+  }
+
+  const bathroomGap = gaps.find(entry => entry.gapMinutes >= 15 && (entry.next?.nearbyBathroom || entry.item?.nearbyBathroom));
+  const bathroomAnchor = bathroomGap?.next || items[items.length - 1];
+  pushSuggestion(
+    suggestions,
+    usedLocationIds,
+    createSupportSuggestion(
+      'bathroom',
+      bathroomGap?.next?.nearbyBathroom || bathroomGap?.item?.nearbyBathroom || bathroomAnchor?.nearbyBathroom,
+      bathroomGap ? 'Pausa técnica entre sets' : 'Baños a mano',
+      bathroomGap
+        ? `${bathroomGap.gapMinutes} min antes de ${bathroomGap.next.title}.`
+        : bathroomAnchor
+          ? `Te quedan cerca al cerrar por ${bathroomAnchor.title}.`
+          : 'Quedan cerca dentro de tu recorrido.'
+    )
+  );
+
+  const serviceAnchor = items[Math.min(items.length - 1, Math.floor(items.length / 2))];
+  const serviceLocation = serviceAnchor?.nearbyService;
+  pushSuggestion(
+    suggestions,
+    usedLocationIds,
+    createSupportSuggestion(
+      'service',
+      serviceLocation,
+      getServiceSuggestionTitle(serviceLocation),
+      serviceAnchor ? `Queda al paso cerca de ${serviceAnchor.title}.` : 'Te queda en el centro de la ruta.'
+    )
+  );
+
+  return suggestions.slice(0, 4);
+}
+
 function compressRouteLocations(items) {
   const locations = [];
   for (const item of items) {
@@ -454,6 +631,7 @@ function buildPersonalRoute(dayId, selectedIds) {
     const location = resolveArtistLocation(artist);
     const previous = selectedArtists[index - 1];
     const hasConflict = Boolean(previous) && timeToMinutes(artist.startTime) < timeToMinutes(previous.endTime);
+    const support = getItemSupport(location);
     return {
       id: artist.id,
       startTime: artist.startTime,
@@ -464,8 +642,7 @@ function buildPersonalRoute(dayId, selectedIds) {
       locationId: location?.id || '',
       isConflict: hasConflict,
       conflictWith: [],
-      nearbyWater: location ? getNearestLocation(location, 'water') : null,
-      nearbyBathroom: location ? getNearestLocation(location, 'bathroom') : null,
+      ...support,
     };
   });
 
@@ -482,6 +659,7 @@ function buildPersonalRoute(dayId, selectedIds) {
 
   const pathLocations = compressRouteLocations(items);
   const metrics = buildRouteMetrics(pathLocations);
+  const suggestions = buildRouteSuggestions(items, metrics.segments);
 
   return {
     mode: 'personal',
@@ -489,6 +667,7 @@ function buildPersonalRoute(dayId, selectedIds) {
     pathLocations,
     splitLocations: [],
     splitMoments: [],
+    suggestions,
     ...metrics,
   };
 }
@@ -501,6 +680,7 @@ function buildGroupRoute(dayId, mergeState) {
       pathLocations: [],
       splitLocations: [],
       splitMoments: [],
+      suggestions: [],
       totalWalkMinutes: 0,
       segments: [],
       unavailableMessage: 'Combina al menos dos agendas para pintar la ruta del grupo.',
@@ -522,6 +702,7 @@ function buildGroupRoute(dayId, mergeState) {
       if (currentItem && currentItem.locationId === leader.stageId) {
         currentItem.endTime = nextTime;
       } else {
+        const support = getItemSupport(location);
         currentItem = {
           id: `group-${slot.time}-${leader.stageId}`,
           startTime: slot.time,
@@ -531,8 +712,7 @@ function buildGroupRoute(dayId, mergeState) {
           location,
           locationId: leader.stageId,
           isConflict: false,
-          nearbyWater: location ? getNearestLocation(location, 'water') : null,
-          nearbyBathroom: location ? getNearestLocation(location, 'bathroom') : null,
+          ...support,
         };
         items.push(currentItem);
       }
@@ -551,6 +731,7 @@ function buildGroupRoute(dayId, mergeState) {
 
   const pathLocations = compressRouteLocations(items);
   const metrics = buildRouteMetrics(pathLocations);
+  const suggestions = buildRouteSuggestions(items, metrics.segments);
 
   return {
     mode: 'group',
@@ -558,6 +739,7 @@ function buildGroupRoute(dayId, mergeState) {
     pathLocations,
     splitLocations: Array.from(new Set(splitMoments.flatMap(moment => moment.locationIds))),
     splitMoments,
+    suggestions,
     ...metrics,
   };
 }
@@ -606,15 +788,93 @@ function buildRoundedPath(points) {
   return path;
 }
 
-function buildRouteSvg(pathLocations, mode) {
-  if (pathLocations.length < 2) {
+function getPointAlongPolyline(points, fraction = 0.5) {
+  const deduped = dedupeSequentialPoints(points);
+  if (deduped.length === 0) return null;
+  if (deduped.length === 1) return { x: deduped[0].x, y: deduped[0].y, angle: 0 };
+
+  const segmentLengths = [];
+  let totalLength = 0;
+
+  for (let index = 0; index < deduped.length - 1; index++) {
+    const start = deduped[index];
+    const end = deduped[index + 1];
+    const length = Math.hypot(end.x - start.x, end.y - start.y);
+    segmentLengths.push(length);
+    totalLength += length;
+  }
+
+  if (totalLength === 0) {
+    return { x: deduped[0].x, y: deduped[0].y, angle: 0 };
+  }
+
+  const target = totalLength * fraction;
+  let traversed = 0;
+
+  for (let index = 0; index < segmentLengths.length; index++) {
+    const length = segmentLengths[index];
+    const start = deduped[index];
+    const end = deduped[index + 1];
+    if (traversed + length >= target) {
+      const local = (target - traversed) / length;
+      return {
+        x: start.x + (end.x - start.x) * local,
+        y: start.y + (end.y - start.y) * local,
+        angle: Math.atan2(end.y - start.y, end.x - start.x) * (180 / Math.PI),
+      };
+    }
+    traversed += length;
+  }
+
+  const lastStart = deduped[deduped.length - 2];
+  const last = deduped[deduped.length - 1];
+  return {
+    x: last.x,
+    y: last.y,
+    angle: Math.atan2(last.y - lastStart.y, last.x - lastStart.x) * (180 / Math.PI),
+  };
+}
+
+function buildRouteSvg(routeData, mode) {
+  const routePoints = routeData.routePoints || routeData.pathLocations;
+  if (routePoints.length < 2) {
     return '';
   }
 
-  const pathData = buildRoundedPath(pathLocations);
+  const pathData = buildRoundedPath(routePoints);
+  const stopIds = new Set(routeData.pathLocations.map(location => location.id));
+  const breadcrumbs = routePoints
+    .filter((point, index) => index > 0 && index < routePoints.length - 1 && !stopIds.has(point.id))
+    .map(point => `<circle class="map-route-breadcrumb ${mode}" cx="${point.x}" cy="${point.y}" r="0.42" />`)
+    .join('');
+  const directionMarkers = routeData.segments
+    .map((segment, index) => {
+      const point = getPointAlongPolyline(segment.points, 0.5);
+      if (!point) return '';
+      return `
+        <g class="map-route-arrow ${mode}" transform="translate(${point.x} ${point.y}) rotate(${point.angle})">
+          <circle class="map-route-arrow-backdrop" cx="0" cy="0" r="1.7" />
+          <path class="map-route-arrow-glyph" d="M -0.6 -0.5 L 0.65 0 L -0.6 0.5" />
+          <text class="map-route-arrow-label" x="0" y="3.25" text-anchor="middle">${index + 1}→${index + 2}</text>
+        </g>
+      `;
+    })
+    .join('');
+  const start = routeData.pathLocations[0];
+  const end = routeData.pathLocations[routeData.pathLocations.length - 1];
+  const endpoints = [
+    start ? `<circle class="map-route-endcap start ${mode}" cx="${start.x}" cy="${start.y}" r="1.7" />` : '',
+    end && end.id !== start?.id ? `<circle class="map-route-endcap end ${mode}" cx="${end.x}" cy="${end.y}" r="1.7" />` : '',
+  ].join('');
+
   return `
+    <path class="map-route-track ${mode}" d="${pathData}" pathLength="100" />
     <path class="map-route-shadow" d="${pathData}" />
-    <path class="map-route-line ${mode}" d="${pathData}" />
+    <path class="map-route-line ${mode}" d="${pathData}" pathLength="100" />
+    <path class="map-route-flow ${mode}" d="${pathData}" pathLength="100" />
+    ${breadcrumbs}
+    ${endpoints}
+    ${directionMarkers}
   `;
 }
 
@@ -626,13 +886,33 @@ function formatRouteOverview(routeData, dayId, activeMode) {
   if (routeData.items.length === 0) {
     return `${day?.label || ''} · No hay paradas seleccionadas`;
   }
-  return `${day?.label || ''} · ${activeMode === 'group' ? 'Ruta del grupo' : 'Mi ruta'} · ${routeData.items.length} parada${routeData.items.length === 1 ? '' : 's'}`;
+  const start = routeData.pathLocations[0]?.shortLabel;
+  const end = routeData.pathLocations[routeData.pathLocations.length - 1]?.shortLabel;
+  const pathCopy = start && end
+    ? start === end
+      ? start
+      : `${start} → ${end}`
+    : `${routeData.items.length} parada${routeData.items.length === 1 ? '' : 's'}`;
+  return `${day?.label || ''} · ${activeMode === 'group' ? 'Ruta del grupo' : 'Mi ruta'} · ${pathCopy}`;
 }
 
 function formatConflictList(names, limit = 2) {
   if (!names?.length) return '';
   if (names.length <= limit) return names.join(' · ');
   return `${names.slice(0, limit).join(' · ')} +${names.length - limit}`;
+}
+
+function buildNearbyChips(item) {
+  const chips = [
+    item.nearbyFood ? { type: 'food', icon: SUPPORT_STOP_META.food.icon, label: item.nearbyFood.shortLabel } : null,
+    item.nearbyWater ? { type: 'water', icon: SUPPORT_STOP_META.water.icon, label: item.nearbyWater.shortLabel } : null,
+    item.nearbyBathroom ? { type: 'bathroom', icon: SUPPORT_STOP_META.bathroom.icon, label: item.nearbyBathroom.shortLabel } : null,
+    item.nearbyService ? { type: 'service', icon: SUPPORT_STOP_META.service.icon, label: item.nearbyService.shortLabel } : null,
+  ].filter(Boolean);
+
+  return chips
+    .map(chip => `<span class="map-nearby-chip ${chip.type}">${chip.icon} ${chip.label}</span>`)
+    .join('');
 }
 
 function renderModeButtons(target, preferredMode, hasGroupRoute, onSetMode) {
@@ -697,9 +977,12 @@ function renderRouteSummary(target, routeData, activeMode) {
 
   const overview = document.createElement('div');
   overview.className = 'map-route-overview';
+  const start = routeData.pathLocations[0]?.shortLabel;
+  const end = routeData.pathLocations[routeData.pathLocations.length - 1]?.shortLabel;
   overview.innerHTML = `
     <strong>${routeData.items.length} parada${routeData.items.length === 1 ? '' : 's'}</strong>
     <span>~${routeData.totalWalkMinutes} min caminando</span>
+    ${start ? `<span>${start}${end && end !== start ? ` → ${end}` : ''}</span>` : ''}
   `;
   target.appendChild(overview);
 
@@ -713,8 +996,7 @@ function renderRouteSummary(target, routeData, activeMode) {
         <div class="map-route-step-title">${item.title}</div>
         <div class="map-route-step-meta">${item.meta}</div>
         <div class="map-route-step-nearby">
-          ${item.nearbyWater ? `💧 ${item.nearbyWater.shortLabel}` : ''}
-          ${item.nearbyBathroom ? `🚻 ${item.nearbyBathroom.shortLabel}` : ''}
+          ${buildNearbyChips(item)}
         </div>
         ${item.isConflict ? `<div class="map-route-warning">Conflicto con ${formatConflictList(item.conflictWith)}</div>` : ''}
       </div>
@@ -725,7 +1007,7 @@ function renderRouteSummary(target, routeData, activeMode) {
       const segment = routeData.segments[index];
       const segmentEl = document.createElement('div');
       segmentEl.className = 'map-route-segment';
-      segmentEl.textContent = `~${segment.walkMinutes} min caminando hacia ${segment.to.shortLabel}`;
+      segmentEl.textContent = `${index + 1} → ${index + 2} · ~${segment.walkMinutes} min hacia ${segment.to.shortLabel}`;
       target.appendChild(segmentEl);
     }
   });
@@ -746,6 +1028,47 @@ function renderRouteSummary(target, routeData, activeMode) {
   }
 }
 
+function renderRouteSuggestions(target, routeData, activeMode) {
+  target.innerHTML = '';
+
+  if (routeData.unavailableMessage) {
+    target.innerHTML = '<p class="empty-state">Combina agendas para desbloquear sugerencias del grupo.</p>';
+    return;
+  }
+
+  if (routeData.items.length === 0) {
+    target.innerHTML = `<p class="empty-state">${activeMode === 'group' ? 'Cuando tengan ruta compartida, aquí aparecerán paradas sugeridas.' : 'Selecciona artistas para ver dónde conviene comer, hidratarte o hacer una pausa.'}</p>`;
+    return;
+  }
+
+  if (!routeData.suggestions?.length) {
+    target.innerHTML = '<p class="empty-state">No hay paradas sugeridas para esta ruta todavía.</p>';
+    return;
+  }
+
+  const list = document.createElement('div');
+  list.className = 'map-suggestion-list';
+
+  routeData.suggestions.forEach((suggestion, index) => {
+    const card = document.createElement('div');
+    card.className = 'map-suggestion-card';
+    card.style.setProperty('--suggestion-color', suggestion.color);
+    card.innerHTML = `
+      <div class="map-suggestion-index">${index + 1}</div>
+      <div class="map-suggestion-icon">${suggestion.icon}</div>
+      <div class="map-suggestion-body">
+        <div class="map-suggestion-kicker">${suggestion.badgeLabel}</div>
+        <div class="map-suggestion-title">${suggestion.location.shortLabel}</div>
+        <div class="map-suggestion-meta">${suggestion.title}</div>
+        <div class="map-suggestion-reason">${suggestion.reason}</div>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+
+  target.appendChild(list);
+}
+
 function renderMapNodes(target, visibleLayers, routeData) {
   target.innerHTML = '';
 
@@ -755,6 +1078,8 @@ function renderMapNodes(target, visibleLayers, routeData) {
     list.push(index + 1);
     routeOrdersByLocation.set(location.id, list);
   });
+  const firstStopId = routeData.pathLocations[0]?.id || '';
+  const lastStopId = routeData.pathLocations[routeData.pathLocations.length - 1]?.id || '';
 
   const splitLocations = new Set(
     routeData.splitLocations
@@ -762,34 +1087,620 @@ function renderMapNodes(target, visibleLayers, routeData) {
       .filter(Boolean)
       .map(location => location.id)
   );
+  const suggestionsByLocation = new Map(routeData.suggestions.map(suggestion => [suggestion.location.id, suggestion]));
 
   for (const location of MAP_LOCATIONS) {
     const isRoute = routeOrdersByLocation.has(location.id);
     const isSplit = splitLocations.has(location.id);
-    const isVisible = visibleLayers.has(location.category) || isRoute || isSplit;
+    const suggestion = suggestionsByLocation.get(location.id);
+    const isSuggested = Boolean(suggestion);
+    const isVisible = visibleLayers.has(location.category) || isRoute || isSplit || isSuggested;
 
     if (!isVisible) continue;
 
     const meta = MAP_LAYER_META[location.category];
+    const orderList = routeOrdersByLocation.get(location.id) || [];
+    const isStart = location.id === firstStopId;
+    const isEnd = location.id === lastStopId;
     const node = document.createElement('div');
-    node.className = `map-node ${visibleLayers.has(location.category) && !isRoute ? 'is-layer' : ''} ${isRoute ? 'is-route' : ''} ${isSplit ? 'is-split' : ''}`;
+    node.className = `map-node ${visibleLayers.has(location.category) && !isRoute ? 'is-layer' : ''} ${isRoute ? 'is-route' : ''} ${isSplit ? 'is-split' : ''} ${isSuggested ? 'is-suggested' : ''} ${isStart ? 'is-start' : ''} ${isEnd ? 'is-end' : ''}`;
     node.style.left = `${location.x}%`;
     node.style.top = `${location.y}%`;
     node.style.setProperty('--node-color', meta.color);
-    node.title = location.label;
+    if (suggestion) {
+      node.style.setProperty('--suggestion-color', suggestion.color);
+    }
+    node.title = suggestion ? `${location.label} · ${suggestion.title}` : location.label;
 
-    const badge = routeOrdersByLocation.get(location.id)?.join('·') || meta.icon;
-    const label = isRoute || isSplit || visibleLayers.has(location.category)
-      ? `<span class="map-node-label">${location.shortLabel}</span>`
+    const badge = orderList.join('·') || meta.icon;
+    const routeLabel = isStart && isEnd
+      ? `Inicio / final · ${location.shortLabel}`
+      : isStart
+        ? `Inicio · ${location.shortLabel}`
+        : isEnd
+          ? `Final · ${location.shortLabel}`
+          : isSuggested
+            ? `${suggestion.badgeLabel} · ${location.shortLabel}`
+            : location.shortLabel;
+    const label = isRoute || isSplit || isSuggested || visibleLayers.has(location.category)
+      ? `<span class="map-node-label">${routeLabel}</span>`
       : '';
+    const flag = isStart && isEnd
+      ? '<span class="map-node-flag dual">Inicio / final</span>'
+      : isStart
+        ? '<span class="map-node-flag">Inicio</span>'
+        : isEnd
+          ? '<span class="map-node-flag end">Final</span>'
+          : isSuggested
+            ? `<span class="map-node-flag suggestion">${suggestion.badgeLabel}</span>`
+            : '';
 
     node.innerHTML = `
       <span class="map-node-core">${badge}</span>
+      ${flag}
       ${label}
     `;
 
     target.appendChild(node);
   }
+}
+
+function slugify(value) {
+  return normalizeLabel(value).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+function canvasToBlob(canvas) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(blob => {
+      if (!blob) {
+        reject(new Error('No se pudo exportar la imagen.'));
+        return;
+      }
+      resolve(blob);
+    }, 'image/png');
+  });
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error(`No se pudo cargar ${src}`));
+    image.src = src;
+  });
+}
+
+function addRoundedRectPath(ctx, x, y, width, height, radius) {
+  const safeRadius = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + safeRadius, y);
+  ctx.lineTo(x + width - safeRadius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + safeRadius);
+  ctx.lineTo(x + width, y + height - safeRadius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - safeRadius, y + height);
+  ctx.lineTo(x + safeRadius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - safeRadius);
+  ctx.lineTo(x, y + safeRadius);
+  ctx.quadraticCurveTo(x, y, x + safeRadius, y);
+  ctx.closePath();
+}
+
+function fillRoundedRect(ctx, x, y, width, height, radius, fillStyle, strokeStyle = '', lineWidth = 1) {
+  ctx.save();
+  addRoundedRectPath(ctx, x, y, width, height, radius);
+  ctx.fillStyle = fillStyle;
+  ctx.fill();
+  if (strokeStyle) {
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = lineWidth;
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawPill(ctx, x, y, text, options = {}) {
+  const {
+    fillStyle = 'rgba(255,255,255,0.08)',
+    strokeStyle = 'rgba(255,255,255,0.14)',
+    color = '#F8F3E8',
+    font = "700 24px 'Outfit', sans-serif",
+    paddingX = 18,
+    paddingY = 10,
+    radius = 999,
+  } = options;
+
+  ctx.save();
+  ctx.font = font;
+  const metrics = ctx.measureText(text);
+  const width = metrics.width + paddingX * 2;
+  const height = 24 + paddingY * 2;
+  fillRoundedRect(ctx, x, y, width, height, radius, fillStyle, strokeStyle, 1);
+  ctx.fillStyle = color;
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, x + paddingX, y + height / 2);
+  ctx.restore();
+  return width;
+}
+
+function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight, maxLines = Infinity) {
+  if (!text) return y;
+
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines = [];
+  let current = '';
+
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (ctx.measureText(candidate).width <= maxWidth || !current) {
+      current = candidate;
+      continue;
+    }
+    lines.push(current);
+    current = word;
+    if (lines.length === maxLines - 1) break;
+  }
+
+  if (current && lines.length < maxLines) {
+    lines.push(current);
+  } else if (current && lines.length === maxLines) {
+    lines[maxLines - 1] = `${lines[maxLines - 1]}…`;
+  }
+
+  lines.forEach((line, index) => {
+    ctx.fillText(line, x, y + index * lineHeight);
+  });
+
+  return y + lines.length * lineHeight;
+}
+
+function scalePointToRect(point, rect) {
+  return {
+    ...point,
+    x: rect.x + (point.x / 100) * rect.width,
+    y: rect.y + (point.y / 100) * rect.height,
+  };
+}
+
+function drawArrowGlyph(ctx, x, y, angle, color, label = '') {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate((angle * Math.PI) / 180);
+  ctx.fillStyle = 'rgba(13, 13, 18, 0.76)';
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(0, 0, 18, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-5, -4);
+  ctx.lineTo(6, 0);
+  ctx.lineTo(-5, 4);
+  ctx.stroke();
+  ctx.restore();
+
+  if (!label) return;
+
+  ctx.save();
+  ctx.font = "700 16px 'Outfit', sans-serif";
+  ctx.fillStyle = 'rgba(255,255,255,0.84)';
+  ctx.strokeStyle = 'rgba(13,13,18,0.88)';
+  ctx.lineWidth = 4;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.strokeText(label, x, y + 22);
+  ctx.fillText(label, x, y + 22);
+  ctx.restore();
+}
+
+function drawRouteOnCanvas(ctx, routeData, mode, rect) {
+  const color = mode === 'group' ? '#00e676' : '#ffd166';
+  const routePoints = (routeData.routePoints || routeData.pathLocations).map(point => scalePointToRect(point, rect));
+  if (routePoints.length < 2) return;
+
+  const path = new Path2D(buildRoundedPath(routePoints));
+
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 16;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.globalAlpha = 0.18;
+  ctx.stroke(path);
+
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+  ctx.lineWidth = 10;
+  ctx.stroke(path);
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 7;
+  ctx.stroke(path);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.92)';
+  ctx.lineWidth = 2.5;
+  ctx.setLineDash([6, 18]);
+  ctx.lineDashOffset = -12;
+  ctx.stroke(path);
+  ctx.restore();
+
+  const stopIds = new Set(routeData.pathLocations.map(location => location.id));
+  routePoints
+    .filter((point, index) => index > 0 && index < routePoints.length - 1 && !stopIds.has(point.id))
+    .forEach(point => {
+      ctx.save();
+      ctx.fillStyle = mode === 'group' ? '#8cf7b1' : '#ffe08a';
+      ctx.globalAlpha = 0.82;
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 3.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
+
+  routeData.segments.forEach((segment, index) => {
+    const point = getPointAlongPolyline(segment.points.map(entry => scalePointToRect(entry, rect)), 0.55);
+    if (!point) return;
+    drawArrowGlyph(ctx, point.x, point.y, point.angle, color, `${index + 1}→${index + 2}`);
+  });
+
+  routeData.pathLocations
+    .map((location, index) => ({ location: scalePointToRect(location, rect), index }))
+    .forEach(({ location, index }) => {
+      const isStart = index === 0;
+      const isEnd = index === routeData.pathLocations.length - 1;
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.strokeStyle = 'rgba(255,255,255,0.96)';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(location.x, location.y, 18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#101012';
+      ctx.font = "800 20px 'Outfit', sans-serif";
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(index + 1), location.x, location.y + 1);
+      ctx.restore();
+
+      const label = isStart && isEnd
+        ? 'Inicio / final'
+        : isStart
+          ? 'Inicio'
+          : isEnd
+            ? 'Final'
+            : '';
+      if (label) {
+        drawPill(
+          ctx,
+          location.x - 40,
+          location.y - 52,
+          label,
+          {
+            fillStyle: isEnd ? 'rgba(0,230,118,0.2)' : isStart && isEnd ? 'rgba(179,136,255,0.2)' : 'rgba(255,209,102,0.2)',
+            strokeStyle: isEnd ? 'rgba(0,230,118,0.28)' : isStart && isEnd ? 'rgba(179,136,255,0.3)' : 'rgba(255,209,102,0.3)',
+            color: isEnd ? '#8cf7b1' : isStart && isEnd ? '#d2b9ff' : '#ffd98a',
+            font: "800 16px 'Outfit', sans-serif",
+            paddingX: 12,
+            paddingY: 6,
+          }
+        );
+      }
+    });
+
+  routeData.suggestions
+    .filter(suggestion => !routeData.pathLocations.some(location => location.id === suggestion.location.id))
+    .forEach(suggestion => {
+      const point = scalePointToRect(suggestion.location, rect);
+      ctx.save();
+      ctx.fillStyle = suggestion.color;
+      ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 10, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    });
+}
+
+function getRouteExportBaseName(dayId, mode) {
+  const day = DAYS.find(entry => entry.id === dayId);
+  return `fep2026-${slugify(day?.label || dayId)}-${mode === 'group' ? 'ruta-grupo' : 'mi-ruta'}`;
+}
+
+function buildRouteTextExport(routeData, dayId, activeMode, shareUrl = '', selectionSeed = '') {
+  const day = DAYS.find(entry => entry.id === dayId);
+
+  if (routeData.unavailableMessage) {
+    return `🗺️ Ruta ${activeMode === 'group' ? 'del grupo' : 'personal'} — ${day?.label || dayId}\n\n${routeData.unavailableMessage}`;
+  }
+
+  const lines = [
+    `🗺️ ${activeMode === 'group' ? 'Ruta del grupo' : 'Mi ruta'} — Estéreo Picnic 2026`,
+    `${day?.label || dayId}`,
+    `Recorrido: ${routeData.pathLocations[0]?.shortLabel || 'Sin inicio'}${routeData.pathLocations.length > 1 ? ` → ${routeData.pathLocations[routeData.pathLocations.length - 1]?.shortLabel || 'Sin final'}` : ''}`,
+    `Caminata estimada: ~${routeData.totalWalkMinutes} min`,
+  ];
+
+  if (activeMode === 'personal' && selectionSeed) {
+    lines.push(`Seed: ${selectionSeed}`);
+  }
+  if (activeMode === 'personal' && shareUrl) {
+    lines.push(`Link: ${shareUrl}`);
+  }
+
+  lines.push('', 'Paradas');
+
+  routeData.items.forEach((item, index) => {
+    lines.push(`${index + 1}. ${item.startTime}–${item.endTime} · ${item.title}`);
+    lines.push(`   ${item.meta}`);
+    const nearby = [
+      item.nearbyFood ? `🍔 ${item.nearbyFood.shortLabel}` : '',
+      item.nearbyWater ? `💧 ${item.nearbyWater.shortLabel}` : '',
+      item.nearbyBathroom ? `🚻 ${item.nearbyBathroom.shortLabel}` : '',
+      item.nearbyService ? `◎ ${item.nearbyService.shortLabel}` : '',
+    ].filter(Boolean);
+    if (nearby.length > 0) {
+      lines.push(`   Cerca: ${nearby.join(' · ')}`);
+    }
+    if (item.isConflict) {
+      lines.push(`   Conflicto con ${formatConflictList(item.conflictWith, 3)}`);
+    }
+    const segment = routeData.segments[index];
+    if (segment) {
+      lines.push(`   ${index + 1} → ${index + 2} · ~${segment.walkMinutes} min hacia ${segment.to.shortLabel}`);
+    }
+    lines.push('');
+  });
+
+  if (routeData.suggestions?.length) {
+    lines.push('Paradas útiles sugeridas');
+    routeData.suggestions.forEach(suggestion => {
+      lines.push(`- ${suggestion.icon} ${suggestion.badgeLabel}: ${suggestion.location.shortLabel}`);
+      lines.push(`  ${suggestion.title}. ${suggestion.reason}`);
+    });
+    lines.push('');
+  }
+
+  if (routeData.splitMoments?.length) {
+    lines.push('Momentos donde el grupo se divide');
+    routeData.splitMoments.forEach(moment => {
+      lines.push(`- ${moment.time}: ${moment.labels.join(' · ')}`);
+    });
+  }
+
+  return lines.join('\n').trim();
+}
+
+async function exportRouteImage(routeData, dayId, activeMode, shareUrl = '', selectionSeed = '') {
+  const day = DAYS.find(entry => entry.id === dayId);
+  const mapImage = await loadImage(MAP_IMAGE_SRC);
+  const width = 1600;
+  const mapHeight = 860;
+  const stopsHeight = Math.max(220, routeData.items.length * 120 + 120);
+  const suggestionsHeight = Math.max(180, routeData.suggestions.length * 100 + 120);
+  const footerHeight = activeMode === 'personal' ? 170 : 120;
+  const height = 260 + mapHeight + stopsHeight + suggestionsHeight + footerHeight;
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+
+  const background = ctx.createLinearGradient(0, 0, width, height);
+  background.addColorStop(0, '#07110f');
+  background.addColorStop(0.45, '#151022');
+  background.addColorStop(1, '#0a0814');
+  ctx.fillStyle = background;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.save();
+  ctx.globalAlpha = 0.18;
+  ctx.fillStyle = activeMode === 'group' ? '#00e676' : '#ffd166';
+  ctx.beginPath();
+  ctx.arc(width - 180, 170, 180, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#7c4dff';
+  ctx.beginPath();
+  ctx.arc(140, height - 170, 220, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  const insetX = 52;
+  const insetY = 42;
+  const insetWidth = width - insetX * 2;
+  const insetHeight = height - insetY * 2;
+  fillRoundedRect(ctx, insetX, insetY, insetWidth, insetHeight, 40, 'rgba(7,10,18,0.62)', 'rgba(255,255,255,0.08)', 1.5);
+
+  const contentX = 92;
+  const contentWidth = width - contentX * 2;
+  let pillX = contentX;
+  const pillY = 82;
+  pillX += drawPill(ctx, pillX, pillY, day?.label || dayId, {
+    fillStyle: 'rgba(255,255,255,0.08)',
+    strokeStyle: 'rgba(255,255,255,0.14)',
+    color: '#F8F3E8',
+  }) + 12;
+  pillX += drawPill(ctx, pillX, pillY, activeMode === 'group' ? 'Ruta grupo' : 'Mi ruta', {
+    fillStyle: activeMode === 'group' ? 'rgba(0,230,118,0.16)' : 'rgba(255,209,102,0.16)',
+    strokeStyle: activeMode === 'group' ? 'rgba(0,230,118,0.26)' : 'rgba(255,209,102,0.24)',
+    color: activeMode === 'group' ? '#8cf7b1' : '#ffd98a',
+  }) + 12;
+  drawPill(ctx, pillX, pillY, `~${routeData.totalWalkMinutes} min caminando`, {
+    fillStyle: 'rgba(124,77,255,0.16)',
+    strokeStyle: 'rgba(124,77,255,0.22)',
+    color: '#d2b9ff',
+  });
+
+  ctx.save();
+  ctx.fillStyle = '#F8F3E8';
+  ctx.font = "800 60px 'Outfit', sans-serif";
+  ctx.fillText(activeMode === 'group' ? 'Ruta compartida del día' : 'Ruta del día', contentX, 176);
+  ctx.fillStyle = 'rgba(248,243,232,0.72)';
+  ctx.font = "500 28px 'Outfit', sans-serif";
+  const topCopy = routeData.pathLocations[0]?.shortLabel
+    ? `${routeData.pathLocations[0].shortLabel}${routeData.pathLocations.length > 1 ? ` → ${routeData.pathLocations[routeData.pathLocations.length - 1].shortLabel}` : ''}`
+    : 'Sin recorrido definido';
+  ctx.fillText(topCopy, contentX, 214);
+  ctx.restore();
+
+  const mapRect = { x: contentX, y: 258, width: contentWidth, height: mapHeight };
+  ctx.save();
+  addRoundedRectPath(ctx, mapRect.x, mapRect.y, mapRect.width, mapRect.height, 34);
+  ctx.clip();
+  ctx.drawImage(mapImage, mapRect.x, mapRect.y, mapRect.width, mapRect.height);
+  drawRouteOnCanvas(ctx, routeData, activeMode, mapRect);
+  ctx.restore();
+  fillRoundedRect(ctx, mapRect.x, mapRect.y, mapRect.width, mapRect.height, 34, 'rgba(255,255,255,0)', 'rgba(255,255,255,0.1)', 1.5);
+
+  let y = mapRect.y + mapRect.height + 54;
+  ctx.save();
+  ctx.fillStyle = '#F8F3E8';
+  ctx.font = "800 34px 'Outfit', sans-serif";
+  ctx.fillText('Itinerario', contentX, y);
+  ctx.restore();
+  y += 26;
+
+  routeData.items.forEach((item, index) => {
+    const cardHeight = 106;
+    fillRoundedRect(ctx, contentX, y, contentWidth, cardHeight, 28, 'rgba(255,255,255,0.04)', item.isConflict ? 'rgba(255,77,77,0.24)' : 'rgba(255,255,255,0.08)', 1.2);
+
+    fillRoundedRect(
+      ctx,
+      contentX + 18,
+      y + 18,
+      56,
+      56,
+      20,
+      activeMode === 'group' ? 'rgba(0,230,118,0.2)' : 'rgba(255,209,102,0.2)',
+      activeMode === 'group' ? 'rgba(0,230,118,0.3)' : 'rgba(255,209,102,0.3)',
+      1.2
+    );
+    ctx.save();
+    ctx.fillStyle = activeMode === 'group' ? '#8cf7b1' : '#ffd98a';
+    ctx.font = "800 24px 'Outfit', sans-serif";
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(index + 1), contentX + 46, y + 46);
+    ctx.restore();
+
+    const textX = contentX + 96;
+    ctx.save();
+    ctx.fillStyle = 'rgba(248,243,232,0.64)';
+    ctx.font = "600 18px 'Outfit', sans-serif";
+    ctx.fillText(`${item.startTime} – ${item.endTime}`, textX, y + 30);
+    ctx.fillStyle = '#F8F3E8';
+    ctx.font = "800 28px 'Outfit', sans-serif";
+    ctx.fillText(item.title, textX, y + 58);
+    ctx.fillStyle = 'rgba(248,243,232,0.68)';
+    ctx.font = "500 18px 'Outfit', sans-serif";
+    ctx.fillText(item.meta, textX, y + 84);
+    const nearbyText = [
+      item.nearbyFood ? `🍔 ${item.nearbyFood.shortLabel}` : '',
+      item.nearbyWater ? `💧 ${item.nearbyWater.shortLabel}` : '',
+      item.nearbyBathroom ? `🚻 ${item.nearbyBathroom.shortLabel}` : '',
+      item.nearbyService ? `◎ ${item.nearbyService.shortLabel}` : '',
+    ].filter(Boolean).join(' · ');
+    ctx.fillStyle = 'rgba(210, 203, 235, 0.82)';
+    ctx.font = "500 16px 'Outfit', sans-serif";
+    drawWrappedText(ctx, nearbyText, textX, y + 106, contentWidth - 120, 20, 2);
+    ctx.restore();
+
+    const segment = routeData.segments[index];
+    if (segment) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(210, 203, 235, 0.65)';
+      ctx.font = "600 16px 'Outfit', sans-serif";
+      ctx.fillText(`${index + 1} → ${index + 2} · ~${segment.walkMinutes} min hacia ${segment.to.shortLabel}`, contentX + 18, y + cardHeight + 24);
+      ctx.restore();
+      y += cardHeight + 38;
+    } else {
+      y += cardHeight + 18;
+    }
+  });
+
+  y += 10;
+  ctx.save();
+  ctx.fillStyle = '#F8F3E8';
+  ctx.font = "800 34px 'Outfit', sans-serif";
+  ctx.fillText('Paradas útiles', contentX, y);
+  ctx.restore();
+  y += 26;
+
+  if (routeData.suggestions.length === 0) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(248,243,232,0.6)';
+    ctx.font = "500 20px 'Outfit', sans-serif";
+    ctx.fillText('No hay paradas sugeridas para esta ruta.', contentX, y + 36);
+    ctx.restore();
+    y += 54;
+  } else {
+    routeData.suggestions.forEach(suggestion => {
+      fillRoundedRect(ctx, contentX, y, contentWidth, 90, 24, 'rgba(255,255,255,0.04)', 'rgba(255,255,255,0.08)', 1);
+      fillRoundedRect(ctx, contentX + 16, y + 15, 54, 54, 18, `${suggestion.color}22`, `${suggestion.color}55`, 1);
+      ctx.save();
+      ctx.font = "700 28px 'Outfit', sans-serif";
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = suggestion.color;
+      ctx.fillText(suggestion.icon, contentX + 43, y + 43);
+      ctx.restore();
+
+      ctx.save();
+      ctx.fillStyle = suggestion.color;
+      ctx.font = "800 16px 'Outfit', sans-serif";
+      ctx.fillText(suggestion.badgeLabel.toUpperCase(), contentX + 92, y + 28);
+      ctx.fillStyle = '#F8F3E8';
+      ctx.font = "800 24px 'Outfit', sans-serif";
+      ctx.fillText(suggestion.location.shortLabel, contentX + 92, y + 54);
+      ctx.fillStyle = 'rgba(248,243,232,0.66)';
+      ctx.font = "500 16px 'Outfit', sans-serif";
+      drawWrappedText(ctx, `${suggestion.title}. ${suggestion.reason}`, contentX + 92, y + 76, contentWidth - 110, 18, 2);
+      ctx.restore();
+      y += 104;
+    });
+  }
+
+  y += 18;
+  fillRoundedRect(ctx, contentX, y, contentWidth, activeMode === 'personal' ? 118 : 90, 24, 'rgba(255,255,255,0.04)', 'rgba(255,255,255,0.08)', 1);
+  ctx.save();
+  ctx.fillStyle = '#F8F3E8';
+  ctx.font = "700 20px 'Outfit', sans-serif";
+  ctx.fillText('Exportado desde Mi Agenda FEP 2026', contentX + 20, y + 32);
+  ctx.fillStyle = 'rgba(248,243,232,0.68)';
+  ctx.font = "500 15px 'Outfit', sans-serif";
+  drawWrappedText(ctx, `Recorrido: ${topCopy}`, contentX + 20, y + 58, contentWidth - 40, 18, 2);
+  if (activeMode === 'personal' && selectionSeed) {
+    drawWrappedText(ctx, `Seed: ${selectionSeed}`, contentX + 20, y + 84, contentWidth - 40, 18, 2);
+  }
+  if (activeMode === 'personal' && shareUrl) {
+    drawWrappedText(ctx, `Link: ${shareUrl}`, contentX + 20, y + 102, contentWidth - 40, 18, 2);
+  }
+  ctx.restore();
+
+  const blob = await canvasToBlob(canvas);
+  downloadBlob(blob, `${getRouteExportBaseName(dayId, activeMode)}.png`);
+}
+
+function exportRouteText(routeData, dayId, activeMode, shareUrl = '', selectionSeed = '') {
+  const text = buildRouteTextExport(routeData, dayId, activeMode, shareUrl, selectionSeed);
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  downloadBlob(blob, `${getRouteExportBaseName(dayId, activeMode)}.txt`);
 }
 
 export function renderMapPanel({
@@ -798,18 +1709,24 @@ export function renderMapPanel({
   mapMode,
   mergeState,
   visibleLayers,
+  shareUrl,
+  selectionSeed,
+  onToast,
   onSetMode,
   onToggleLayer,
 }) {
   const routeCaption = document.getElementById('map-route-caption');
   const routeSummary = document.getElementById('map-route-summary');
+  const routeSuggestions = document.getElementById('map-route-suggestions');
   const routeSvg = document.getElementById('festival-map-route');
   const poiLayer = document.getElementById('festival-map-pois');
   const layerToggles = document.getElementById('map-layer-toggles');
   const modeToggle = document.getElementById('map-mode-toggle');
   const legendGrid = document.getElementById('map-legend-grid');
+  const exportImageButton = document.getElementById('btn-export-map-image');
+  const exportTextButton = document.getElementById('btn-export-map-text');
 
-  if (!routeCaption || !routeSummary || !routeSvg || !poiLayer || !layerToggles || !modeToggle || !legendGrid) {
+  if (!routeCaption || !routeSummary || !routeSuggestions || !routeSvg || !poiLayer || !layerToggles || !modeToggle || !legendGrid || !exportImageButton || !exportTextButton) {
     return;
   }
 
@@ -818,11 +1735,36 @@ export function renderMapPanel({
   const routeData = getRouteData(dayId, selectedIds, activeMode, mergeState);
 
   routeCaption.textContent = formatRouteOverview(routeData, dayId, activeMode);
-  routeSvg.innerHTML = buildRouteSvg(routeData.routePoints || routeData.pathLocations, activeMode);
+  routeSvg.innerHTML = buildRouteSvg(routeData, activeMode);
 
   renderModeButtons(modeToggle, activeMode, hasGroupRoute, onSetMode);
   renderLayerToggles(layerToggles, visibleLayers, onToggleLayer);
   renderLegendGrid(legendGrid);
   renderRouteSummary(routeSummary, routeData, activeMode);
+  renderRouteSuggestions(routeSuggestions, routeData, activeMode);
   renderMapNodes(poiLayer, visibleLayers, routeData);
+
+  const canExport = !routeData.unavailableMessage && routeData.items.length > 0;
+  exportImageButton.disabled = !canExport;
+  exportTextButton.disabled = !canExport;
+
+  exportImageButton.onclick = async () => {
+    if (!canExport) return;
+    try {
+      await exportRouteImage(routeData, dayId, activeMode, shareUrl, selectionSeed);
+      onToast?.('Imagen de la ruta descargada');
+    } catch {
+      onToast?.('No se pudo exportar la imagen');
+    }
+  };
+
+  exportTextButton.onclick = () => {
+    if (!canExport) return;
+    try {
+      exportRouteText(routeData, dayId, activeMode, shareUrl, selectionSeed);
+      onToast?.('Texto de la ruta descargado');
+    } catch {
+      onToast?.('No se pudo exportar el texto');
+    }
+  };
 }

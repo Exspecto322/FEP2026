@@ -692,6 +692,13 @@ input, textarea {
   border-color: var(--selected);
 }
 
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 .btn-sm {
   padding: 6px 10px;
   font-size: 0.72rem;
@@ -1383,19 +1390,33 @@ input, textarea {
 .map-route-shadow {
   fill: none;
   stroke: rgba(0, 0, 0, 0.45);
-  stroke-width: 2.1;
+  stroke-width: 2.35;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.map-route-line {
+.map-route-track {
   fill: none;
-  stroke-width: 1.65;
+  stroke-width: 3.8;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-dasharray: 3.5 2.2;
-  animation: dash-route 22s linear infinite;
-  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.22));
+  opacity: 0.2;
+}
+
+.map-route-track.personal {
+  stroke: #ffd166;
+}
+
+.map-route-track.group {
+  stroke: #00e676;
+}
+
+.map-route-line {
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.18));
 }
 
 .map-route-line.personal {
@@ -1406,9 +1427,84 @@ input, textarea {
   stroke: #00e676;
 }
 
-@keyframes dash-route {
+.map-route-flow {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.96);
+  stroke-width: 0.78;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1.4 7.4;
+  animation: route-flow 14s linear infinite;
+}
+
+.map-route-breadcrumb {
+  opacity: 0.72;
+}
+
+.map-route-breadcrumb.personal {
+  fill: #ffe08a;
+}
+
+.map-route-breadcrumb.group {
+  fill: #8cf7b1;
+}
+
+.map-route-endcap {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.9);
+  stroke-width: 0.35;
+  opacity: 0.9;
+}
+
+.map-route-endcap.start.personal,
+.map-route-endcap.end.personal {
+  stroke: #ffd166;
+}
+
+.map-route-endcap.start.group,
+.map-route-endcap.end.group {
+  stroke: #00e676;
+}
+
+.map-route-arrow {
+  pointer-events: none;
+}
+
+.map-route-arrow-backdrop {
+  fill: rgba(13, 13, 18, 0.72);
+  stroke: rgba(255, 255, 255, 0.16);
+  stroke-width: 0.12;
+}
+
+.map-route-arrow.personal .map-route-arrow-glyph {
+  stroke: #ffd166;
+}
+
+.map-route-arrow.group .map-route-arrow-glyph {
+  stroke: #00e676;
+}
+
+.map-route-arrow-glyph {
+  fill: none;
+  stroke-width: 0.28;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.map-route-arrow-label {
+  font-family: 'Outfit', sans-serif;
+  fill: rgba(255, 255, 255, 0.82);
+  font-size: 1.45px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  paint-order: stroke;
+  stroke: rgba(13, 13, 18, 0.88);
+  stroke-width: 0.35px;
+}
+
+@keyframes route-flow {
   to {
-    stroke-dashoffset: -120;
+    stroke-dashoffset: -100;
   }
 }
 
@@ -1462,6 +1558,56 @@ input, textarea {
   z-index: 4;
 }
 
+.map-node.is-start .map-node-core {
+  box-shadow:
+    0 0 0 8px rgba(255, 209, 102, 0.16),
+    0 10px 24px rgba(0, 0, 0, 0.28);
+}
+
+.map-node.is-end .map-node-core {
+  box-shadow:
+    0 0 0 8px rgba(0, 230, 118, 0.16),
+    0 10px 24px rgba(0, 0, 0, 0.28);
+}
+
+.map-node.is-suggested .map-node-core {
+  box-shadow:
+    0 0 0 8px color-mix(in srgb, var(--suggestion-color) 18%, transparent),
+    0 10px 24px rgba(0, 0, 0, 0.28);
+}
+
+.map-node-flag {
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: rgba(255, 209, 102, 0.16);
+  border: 1px solid rgba(255, 209, 102, 0.26);
+  color: #ffd98a;
+  white-space: nowrap;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+}
+
+.map-node-flag.end {
+  background: rgba(0, 230, 118, 0.16);
+  border-color: rgba(0, 230, 118, 0.24);
+  color: #8cf7b1;
+}
+
+.map-node-flag.dual {
+  background: rgba(179, 136, 255, 0.14);
+  border-color: rgba(179, 136, 255, 0.24);
+  color: #d2b9ff;
+}
+
+.map-node-flag.suggestion {
+  background: color-mix(in srgb, var(--suggestion-color) 18%, rgba(13, 13, 18, 0.9));
+  border-color: color-mix(in srgb, var(--suggestion-color) 42%, rgba(255, 255, 255, 0.14));
+  color: var(--suggestion-color);
+}
+
 .map-node.is-split .map-node-core {
   box-shadow: 0 0 0 6px rgba(255, 77, 77, 0.15);
 }
@@ -1484,6 +1630,11 @@ input, textarea {
   border-color: color-mix(in srgb, var(--node-color) 42%, rgba(255, 255, 255, 0.14));
 }
 
+.map-node.is-suggested .map-node-label {
+  background: color-mix(in srgb, var(--suggestion-color) 14%, rgba(13, 13, 18, 0.92));
+  border-color: color-mix(in srgb, var(--suggestion-color) 36%, rgba(255, 255, 255, 0.14));
+}
+
 .map-sidebar {
   display: flex;
   flex-direction: column;
@@ -1491,15 +1642,19 @@ input, textarea {
 }
 
 .map-route-overview {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   gap: 12px;
   padding: 12px 14px;
   border-radius: var(--border-radius-sm);
   background: var(--bg-glass);
   margin-bottom: 12px;
   font-size: 0.82rem;
+}
+
+.map-route-overview strong,
+.map-route-overview span {
+  display: block;
 }
 
 .map-route-step {
@@ -1557,10 +1712,46 @@ input, textarea {
 .map-route-step-nearby {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 7px;
   font-size: 0.7rem;
   color: var(--text-muted);
   margin-top: 7px;
+}
+
+.map-nearby-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.map-nearby-chip.food {
+  background: rgba(255, 138, 0, 0.1);
+  border-color: rgba(255, 138, 0, 0.18);
+  color: #ffbe7d;
+}
+
+.map-nearby-chip.water {
+  background: rgba(124, 231, 255, 0.1);
+  border-color: rgba(124, 231, 255, 0.18);
+  color: #a7f1ff;
+}
+
+.map-nearby-chip.bathroom {
+  background: rgba(77, 208, 255, 0.1);
+  border-color: rgba(77, 208, 255, 0.18);
+  color: #9de6ff;
+}
+
+.map-nearby-chip.service {
+  background: rgba(100, 227, 139, 0.1);
+  border-color: rgba(100, 227, 139, 0.18);
+  color: #baf7ca;
 }
 
 .map-route-warning {
@@ -1603,6 +1794,93 @@ input, textarea {
   font-size: 0.72rem;
   color: var(--text-secondary);
   margin-bottom: 6px;
+}
+
+.map-suggestion-list {
+  display: grid;
+  gap: 10px;
+}
+
+.map-suggestion-card {
+  --suggestion-color: #ffd166;
+  display: grid;
+  grid-template-columns: 28px 40px minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.map-suggestion-index {
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--suggestion-color) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--suggestion-color) 36%, transparent);
+  color: var(--suggestion-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.76rem;
+  font-weight: 800;
+  font-family: 'Outfit', sans-serif;
+}
+
+.map-suggestion-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--suggestion-color) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--suggestion-color) 32%, transparent);
+  color: var(--suggestion-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.map-suggestion-body {
+  min-width: 0;
+}
+
+.map-suggestion-kicker {
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--suggestion-color);
+}
+
+.map-suggestion-title {
+  margin-top: 2px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.map-suggestion-meta {
+  margin-top: 2px;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.map-suggestion-reason {
+  margin-top: 6px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.map-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.map-export-actions .btn {
+  flex: 1 1 160px;
+  justify-content: center;
 }
 
 .map-layer-toggles {
@@ -1817,6 +2095,11 @@ input, textarea {
 
   .map-layout {
     grid-template-columns: 1fr;
+  }
+
+  .map-route-arrow-label,
+  .map-node-flag {
+    display: none;
   }
 
   .map-node-label {
