@@ -2,7 +2,7 @@
 // FEP2026 — Main App Controller
 // ============================================================
 
-import { ARTISTS, DAYS, STAGES, getArtistById, getArtistsByDay, timesOverlap } from './data.js';
+import { ARTISTS, ALL_ARTISTS, DAYS, STAGES, getArtistById, getArtistsByDay, timesOverlap } from './data.js';
 import { renderScheduleGrid, renderScheduleList, updateSelectionVisuals, getConflicts } from './schedule.js';
 import { encodeSeed, decodeSeed, saveToHash, loadFromHash, saveToStorage, loadFromStorage, getShareableURL, exportAsText } from './seed.js';
 import { parseMergeInputs, mergeSchedules, generateRoutePlan, renderMergedSchedule } from './merge.js';
@@ -11,12 +11,13 @@ import { renderRecommendations } from './recommend.js';
 // ============================================================
 // Global State
 // ============================================================
-window._fepData = { ARTISTS };
+window._fepData = { ARTISTS: ALL_ARTISTS };
 
 let selectedIds = new Set();
 let currentDay = 'friday';
 let currentView = 'schedule'; // 'schedule' | 'my-schedule' | 'merge'
 let currentLayout = 'grid'; // 'grid' | 'list'
+let showClubs = false; // toggle for Clubes FEP
 
 // ============================================================
 // Initialization
@@ -34,6 +35,7 @@ function init() {
   setupDayTabs();
   setupNavigation();
   setupViewToggle();
+  setupClubsToggle();
   setupMergePanel();
   setupSharePanel();
   setupSearch();
@@ -113,9 +115,9 @@ function setView(view) {
 // ============================================================
 function renderCurrentDay() {
   if (currentLayout === 'list') {
-    renderScheduleList(currentDay, selectedIds, toggleArtist);
+    renderScheduleList(currentDay, selectedIds, toggleArtist, showClubs);
   } else {
-    renderScheduleGrid(currentDay, selectedIds, toggleArtist);
+    renderScheduleGrid(currentDay, selectedIds, toggleArtist, showClubs);
   }
 }
 
