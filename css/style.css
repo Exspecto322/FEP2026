@@ -154,6 +154,10 @@ input, textarea {
   gap: 8px;
 }
 
+.header-shortcut {
+  flex-shrink: 0;
+}
+
 /* ── Search ── */
 .search-wrapper {
   position: relative;
@@ -797,7 +801,7 @@ input, textarea {
   justify-content: space-around;
   align-items: center;
   height: 100%;
-  max-width: 480px;
+  max-width: 620px;
   margin: 0 auto;
 }
 
@@ -806,7 +810,7 @@ input, textarea {
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  padding: 6px 12px;
+  padding: 6px 10px;
   border-radius: var(--border-radius-sm);
   transition: all 0.2s;
   font-size: 0.65rem;
@@ -1043,6 +1047,12 @@ input, textarea {
   padding: 24px 20px;
 }
 
+.panel-map {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+}
+
 /* ── Clubes ── */
 .club-tag-inline {
   display: inline-block;
@@ -1242,6 +1252,374 @@ input, textarea {
   letter-spacing: 0.05em;
 }
 
+/* ── Map View ── */
+.map-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.map-mode-toggle {
+  display: inline-flex;
+  gap: 8px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+}
+
+.map-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  transition: all 0.2s var(--ease-out);
+}
+
+.map-mode-btn:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.map-mode-btn.active {
+  background: rgba(124, 77, 255, 0.2);
+  color: var(--text-primary);
+}
+
+.map-mode-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.map-caption {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.map-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.8fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.map-main {
+  min-width: 0;
+}
+
+.map-shell {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--border-subtle);
+  border-radius: 24px;
+  padding: 14px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+}
+
+.map-canvas {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2160 / 1350;
+  overflow: hidden;
+  border-radius: 18px;
+  background: #0b120f;
+}
+
+.map-base-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.map-route-overlay,
+.map-poi-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.map-route-overlay {
+  overflow: visible;
+}
+
+.map-route-shadow {
+  fill: none;
+  stroke: rgba(0, 0, 0, 0.45);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.map-route-line {
+  fill: none;
+  stroke-width: 1.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 3 2;
+  animation: dash-route 22s linear infinite;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.22));
+}
+
+.map-route-line.personal {
+  stroke: #ffd166;
+}
+
+.map-route-line.group {
+  stroke: #00e676;
+}
+
+@keyframes dash-route {
+  to {
+    stroke-dashoffset: -120;
+  }
+}
+
+.map-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+  cursor: default;
+}
+
+.map-node-core {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--node-color) 78%, black);
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.66rem;
+  font-weight: 800;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.26);
+}
+
+.map-node.is-route .map-node-core {
+  width: 28px;
+  height: 28px;
+  background: var(--node-color);
+  color: #101012;
+  border-color: rgba(255, 255, 255, 0.95);
+}
+
+.map-node.is-split .map-node-core {
+  box-shadow: 0 0 0 6px rgba(255, 77, 77, 0.15);
+}
+
+.map-node-label {
+  font-size: 0.66rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(13, 13, 18, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  white-space: nowrap;
+  color: var(--text-primary);
+  backdrop-filter: blur(10px);
+}
+
+.map-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.map-route-overview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--border-radius-sm);
+  background: var(--bg-glass);
+  margin-bottom: 12px;
+  font-size: 0.82rem;
+}
+
+.map-route-step {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.map-route-step.conflict {
+  border-left: 3px solid var(--conflict);
+  padding-left: 10px;
+}
+
+.map-route-step-index {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: rgba(124, 77, 255, 0.14);
+  color: #c9b0ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-family: 'Outfit', sans-serif;
+}
+
+.map-route-step-body {
+  min-width: 0;
+}
+
+.map-route-step-time {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.map-route-step-title {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 0.93rem;
+  line-height: 1.2;
+  margin-top: 3px;
+}
+
+.map-route-step-meta {
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.map-route-step-nearby {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 7px;
+}
+
+.map-route-warning {
+  font-size: 0.68rem;
+  color: var(--conflict);
+  font-weight: 700;
+  margin-top: 6px;
+}
+
+.map-route-segment {
+  margin: 0 0 0 46px;
+  padding: 0 0 0 14px;
+  border-left: 1px dashed var(--border-accent);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.map-split-summary {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.map-split-summary strong {
+  display: block;
+  font-size: 0.8rem;
+  margin-bottom: 8px;
+}
+
+.map-split-row {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 8px;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.map-layer-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.map-layer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+  font-weight: 700;
+  transition: all 0.2s var(--ease-out);
+}
+
+.map-layer-chip.active {
+  background: color-mix(in srgb, var(--layer-color) 16%, transparent);
+  border-color: color-mix(in srgb, var(--layer-color) 45%, transparent);
+  color: var(--text-primary);
+}
+
+.map-layer-chip-icon {
+  color: var(--layer-color);
+}
+
+.map-legend-image {
+  display: block;
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid var(--border-subtle);
+  margin-bottom: 12px;
+}
+
+.map-legend-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.map-legend-item {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--border-radius-sm);
+  background: var(--bg-glass);
+}
+
+.map-legend-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--legend-color) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--legend-color) 45%, transparent);
+  color: var(--legend-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+}
+
+.map-legend-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.map-legend-copy strong {
+  font-size: 0.78rem;
+}
+
+.map-legend-copy span {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
 /* ── Toast ── */
 .toast {
   position: fixed;
@@ -1268,6 +1646,10 @@ input, textarea {
 
 /* ── Responsive ── */
 @media (max-width: 900px) {
+  .header-shortcut {
+    display: none;
+  }
+
   .sidebar {
     display: none;
   }
@@ -1333,6 +1715,23 @@ input, textarea {
   .clubes-venue-grid {
     grid-template-columns: 1fr;
   }
+
+  .map-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .map-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .map-node-label {
+    display: none;
+  }
+
+  .map-route-segment {
+    margin-left: 40px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1356,6 +1755,28 @@ input, textarea {
   .day-tab {
     padding: 8px 12px;
     font-size: 0.78rem;
+  }
+
+  .map-mode-toggle {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .map-mode-btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .map-route-step {
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .map-route-step-index {
+    width: 28px;
+    height: 28px;
+    border-radius: 10px;
+    font-size: 0.72rem;
   }
 }
 

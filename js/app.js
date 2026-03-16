@@ -6,6 +6,7 @@ import { ARTISTS, DAYS, STAGES, getClubes, getClubSeries, getArtistDisplayName, 
 import { renderScheduleGrid, renderScheduleList, updateSelectionVisuals, getConflicts } from './schedule.js';
 import { encodeSeed, decodeSeed, saveToHash, loadFromHash, saveToStorage, loadFromStorage, getShareableURL, exportAsText } from './seed.js';
 import { parseMergeInputs, mergeSchedules, generateRoutePlan, renderMergedSchedule } from './merge.js';
+import { DEFAULT_MAP_LAYERS, renderMapPanel } from './map.js';
 import { renderRecommendations } from './recommend.js';
 
 // ============================================================
@@ -15,8 +16,11 @@ window._fepData = { ARTISTS };
 
 let selectedIds = new Set();
 let currentDay = 'friday';
-let currentView = 'schedule'; // 'schedule' | 'my-schedule' | 'merge' | 'clubes'
+let currentView = 'schedule'; // 'schedule' | 'my-schedule' | 'merge' | 'clubes' | 'map'
 let currentLayout = 'grid'; // 'grid' | 'list'
+let currentMapMode = 'personal'; // 'personal' | 'group'
+let visibleMapLayers = new Set(DEFAULT_MAP_LAYERS);
+let latestMergeState = null;
 
 // ============================================================
 // Initialization
@@ -46,6 +50,7 @@ function init() {
   updateRecommendations();
   updateCounter();
   renderClubesPanel(); // Initial render for clubes panel
+  rerenderMap();
 
   // Listen for hash changes (e.g., navigating back)
   window.addEventListener('hashchange', () => {
@@ -56,6 +61,7 @@ function init() {
     updateRecommendations();
     updateCounter();
     renderClubesPanel();
+    rerenderMap();
   });
 }
 
@@ -88,6 +94,7 @@ function switchDay(dayId) {
   document.body.style.setProperty('--day-gradient', dayInfo.themeGradient);
 
   renderCurrentDay();
+  rerenderMap();
 }
 
 // ============================================================
@@ -97,14 +104,15 @@ function setupNavigation() {
   document.getElementById('nav-schedule')?.addEventListener('click', () => setView('schedule'));
   document.getElementById('nav-my-schedule')?.addEventListener('click', () => setView('my-schedule'));
   document.getElementById('nav-merge')?.addEventListener('click', () => setView('merge'));
+  document.getElementById('nav-map')?.addEventListener('click', () => setView('map'));
   document.getElementById('nav-clubes')?.addEventListener('click', () => setView('clubes'));
+
+  document.getElementById('btn-map-desktop')?.addEventListener('click', () => {
+    setView(currentView === 'map' ? 'schedule' : 'map');
+  });
   
   document.getElementById('btn-clubes-desktop')?.addEventListener('click', () => {
-    if (currentView === 'clubes') {
-      setView('schedule');
-    } else {
-      setView('clubes');
-    }
+    setView(currentView === 'clubes' ? 'schedule' : 'clubes');
   });
 }
 
@@ -116,28 +124,29 @@ function setView(view) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(`nav-${view}`)?.classList.add('active');
 
-  document.querySelector('.day-tabs-wrapper')?.classList.toggle('is-hidden', view !== 'schedule');
+  document.querySelector('.day-tabs-wrapper')?.classList.toggle('is-hidden', !['schedule', 'map'].includes(view));
 
-  const desktopBtn = document.getElementById('btn-clubes-desktop');
-  if (desktopBtn) {
-    if (view === 'clubes') {
-      desktopBtn.textContent = '⬅ Volver a la Grilla';
-      desktopBtn.classList.add('btn-primary');
-      desktopBtn.classList.remove('btn-secondary');
-    } else {
-      desktopBtn.textContent = '🎉 Clubes';
-      desktopBtn.classList.add('btn-secondary');
-      desktopBtn.classList.remove('btn-primary');
-    }
-  }
+  updateDesktopShortcutState('btn-map-desktop', view === 'map');
+  updateDesktopShortcutState('btn-clubes-desktop', view === 'clubes');
 
   if (view === 'clubes') {
     renderClubesPanel();
   }
 
+  if (view === 'map') {
+    rerenderMap();
+  }
+
   if (view === 'my-schedule') {
     updateMySchedule();
   }
+}
+
+function updateDesktopShortcutState(buttonId, isActive) {
+  const button = document.getElementById(buttonId);
+  if (!button) return;
+  button.classList.toggle('btn-primary', isActive);
+  button.classList.toggle('btn-secondary', !isActive);
 }
 
 // ============================================================
@@ -184,6 +193,7 @@ function toggleArtist(artistId) {
   updateRecommendations();
   updateCounter();
   renderClubesPanel(); // Re-render to show checkbox states
+  rerenderMap();
 }
 
 // ============================================================
@@ -389,6 +399,28 @@ function updateRecommendations() {
   }
 }
 
+function rerenderMap() {
+  renderMapPanel({
+    dayId: currentDay,
+    selectedIds,
+    mapMode: currentMapMode,
+    mergeState: latestMergeState,
+    visibleLayers: visibleMapLayers,
+    onSetMode: (mode) => {
+      currentMapMode = mode;
+      rerenderMap();
+    },
+    onToggleLayer: (layerId) => {
+      if (visibleMapLayers.has(layerId)) {
+        visibleMapLayers.delete(layerId);
+      } else {
+        visibleMapLayers.add(layerId);
+      }
+      rerenderMap();
+    },
+  });
+}
+
 // ============================================================
 // Counter Badge
 // ============================================================
@@ -510,6 +542,7 @@ function setupMergePanel() {
 
       const schedules = parseMergeInputs(inputs);
       const merged = mergeSchedules(schedules);
+      latestMergeState = { schedules, merged };
       const resultEl = document.getElementById(panel.result);
 
       resultEl.innerHTML = '';
@@ -527,6 +560,8 @@ function setupMergePanel() {
         renderMergedSchedule(dayMerged, route, daySection);
         resultEl.appendChild(daySection);
       }
+
+      rerenderMap();
     });
   }
 }

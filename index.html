@@ -24,8 +24,9 @@
       <span class="header-year">2026</span>
     </div>
     <div class="header-actions">
+      <button class="btn btn-secondary btn-sm header-shortcut" id="btn-map-desktop">🗺️ Mapa</button>
       <!-- Clubes Toggle (desktop) -->
-      <button class="btn btn-secondary btn-sm" id="btn-clubes-desktop" style="margin-right: 8px;">🎉 Clubes</button>
+      <button class="btn btn-secondary btn-sm header-shortcut" id="btn-clubes-desktop">🎉 Clubes</button>
       <!-- Search (desktop) -->
       <div class="search-wrapper">
         <span class="search-icon">🔍</span>
@@ -136,6 +137,54 @@
     </div>
   </div>
 
+  <!-- Map View -->
+  <div class="view-panel" id="panel-map">
+    <div class="panel-map">
+      <div class="map-toolbar">
+        <div class="map-mode-toggle" id="map-mode-toggle"></div>
+        <p class="map-caption" id="map-route-caption"></p>
+      </div>
+
+      <div class="map-layout">
+        <section class="map-main">
+          <div class="map-shell">
+            <div class="map-canvas" id="festival-map-canvas">
+              <img
+                class="map-base-image"
+                src="assets/images/map/fep-site-map.png"
+                alt="Mapa oficial del Festival Estéreo Picnic 2026"
+              >
+              <svg class="map-route-overlay" id="festival-map-route" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+              <div class="map-poi-layer" id="festival-map-pois"></div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="map-sidebar">
+          <div class="sidebar-section">
+            <h3>🧭 Ruta Dinámica</h3>
+            <div id="map-route-summary"></div>
+          </div>
+
+          <div class="sidebar-section">
+            <h3>🪄 Capas</h3>
+            <div class="map-layer-toggles" id="map-layer-toggles"></div>
+          </div>
+
+          <div class="sidebar-section">
+            <h3>📘 Convenciones</h3>
+            <img
+              class="map-legend-image"
+              src="assets/images/map/fep-map-legend.jpg"
+              alt="Convenciones oficiales del mapa del festival"
+            >
+            <div class="map-legend-grid" id="map-legend-grid"></div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
   <!-- Merge View -->
   <div class="view-panel" id="panel-merge">
     <div class="panel-merge">
@@ -167,6 +216,10 @@
       <button class="nav-btn" id="nav-merge">
         <span class="nav-icon">🤝</span>
         <span>Combinar</span>
+      </button>
+      <button class="nav-btn" id="nav-map">
+        <span class="nav-icon">🗺️</span>
+        <span>Mapa</span>
       </button>
       <button class="nav-btn" id="nav-clubes">
         <span class="nav-icon">🎉</span>
