@@ -10,10 +10,10 @@ export const STAGES = [
   { id: 'paramo', name: 'Páramo', sponsor: '', color: '#FF6D00' },
   { id: 'lago', name: 'Lago', sponsor: '', color: '#2979FF' },
   { id: 'fuerza-bruta', name: 'Fuerza Bruta', sponsor: 'Falabella', color: '#E040FB' },
-  // Club stages
-  { id: 'club-aora', name: 'AORA Durex', sponsor: 'Durex', color: '#FF8A80', club: true },
-  { id: 'club-rompe', name: 'ROMPE x Sprite', sponsor: 'Sprite', color: '#69F0AE', club: true },
-  { id: 'club-coke', name: 'Club FEP x Coke Studio', sponsor: 'Coke Studio', color: '#FFAB40', club: true },
+  // Club stages (optional)
+  { id: 'club-aora', name: 'AORA', sponsor: 'Durex', color: '#CDDC39', isClub: true },
+  { id: 'club-rompe', name: 'Rompe x Sprite', sponsor: 'Sprite', color: '#F44336', isClub: true },
+  { id: 'club-coke', name: 'Club FEP x Coke Studio', sponsor: 'Coke', color: '#9C27B0', isClub: true },
 ];
 
 export const DAYS = [
@@ -183,117 +183,118 @@ export const ARTISTS = [...FRIDAY, ...SATURDAY, ...SUNDAY];
 export const TOTAL_ARTISTS = ARTISTS.length;
 
 // ============================================================
-// CLUBES FEP — Optional club stages (separate area)
+// CLUBES FEP — Optional club stages
 // ============================================================
-
-// VIERNES CLUBS
 const CLUBS_FRIDAY = [
-  // AORA Durex
-  { id: makeId(), name: 'Dolores te canta', day: 'friday', stage: 'club-aora', startTime: '18:00', endTime: '19:00', genres: ['latin', 'pop'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Prismátika DJ Set', day: 'friday', stage: 'club-aora', startTime: '19:10', endTime: '21:00', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Fleshapoids', day: 'friday', stage: 'club-aora', startTime: '22:00', endTime: '00:00', genres: ['electronic', 'experimental'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'GOTTMIK', day: 'friday', stage: 'club-aora', startTime: '00:30', endTime: '01:00', genres: ['pop', 'electronic'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Leeon DJ Set', day: 'friday', stage: 'club-aora', startTime: '01:00', endTime: '03:00', genres: ['electronic', 'house', 'dj'], tier: 'emerging', club: true },
+  // AORA (Durex)
+  { id: makeId(), name: 'Dolores te canta', day: 'friday', stage: 'club-aora', startTime: '18:00', endTime: '19:00', genres: ['latin', 'pop'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Prismátika DJ Set', day: 'friday', stage: 'club-aora', startTime: '19:10', endTime: '21:00', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Fleshapoids', day: 'friday', stage: 'club-aora', startTime: '22:00', endTime: '00:00', genres: ['electronic', 'experimental'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'GOTTMIK', day: 'friday', stage: 'club-aora', startTime: '00:30', endTime: '01:00', genres: ['pop', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Leeon DJ Set', day: 'friday', stage: 'club-aora', startTime: '01:00', endTime: '03:00', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
 
-  // ROMPE x Sprite
-  { id: makeId(), name: 'Mauro', day: 'friday', stage: 'club-rompe', startTime: '16:00', endTime: '17:00', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Marakes', day: 'friday', stage: 'club-rompe', startTime: '17:00', endTime: '18:00', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Tarik B2B VITA', day: 'friday', stage: 'club-rompe', startTime: '18:00', endTime: '19:30', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Mr Diamonds B2B Felipe Rz', day: 'friday', stage: 'club-rompe', startTime: '19:30', endTime: '21:00', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Iván Montes', day: 'friday', stage: 'club-rompe', startTime: '21:00', endTime: '22:00', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Daddy G', day: 'friday', stage: 'club-rompe', startTime: '22:00', endTime: '23:00', genres: ['electronic', 'dj', 'house'], tier: 'mid', club: true },
-  { id: makeId(), name: 'Alex Serrano F2F Puga', day: 'friday', stage: 'club-rompe', startTime: '23:00', endTime: '00:30', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'DJ Matt Is Good', day: 'friday', stage: 'club-rompe', startTime: '00:30', endTime: '02:00', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Frank B2B Harold', day: 'friday', stage: 'club-rompe', startTime: '02:00', endTime: '03:00', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
+  // Rompe x Sprite (Napoleón vs Odem)
+  { id: makeId(), name: 'Mauro', day: 'friday', stage: 'club-rompe', startTime: '16:00', endTime: '17:00', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Marakes', day: 'friday', stage: 'club-rompe', startTime: '17:00', endTime: '18:00', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Tarik B2B VITA', day: 'friday', stage: 'club-rompe', startTime: '18:00', endTime: '19:30', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Mr Diamonds B2B Felipe Rz', day: 'friday', stage: 'club-rompe', startTime: '19:30', endTime: '21:00', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Iván Montes', day: 'friday', stage: 'club-rompe', startTime: '21:00', endTime: '22:00', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Daddy G', day: 'friday', stage: 'club-rompe', startTime: '22:00', endTime: '23:00', genres: ['electronic', 'dj', 'bass-music'], tier: 'mid', isClub: true },
+  { id: makeId(), name: 'Alex Serrano F2F Puga', day: 'friday', stage: 'club-rompe', startTime: '23:00', endTime: '00:30', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'DJ Matt Is Good', day: 'friday', stage: 'club-rompe', startTime: '00:30', endTime: '02:00', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Frank B2B Harold', day: 'friday', stage: 'club-rompe', startTime: '02:00', endTime: '03:00', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
 
   // Club FEP x Coke Studio (KAPUTT)
-  { id: makeId(), name: 'Sylvana', day: 'friday', stage: 'club-coke', startTime: '17:30', endTime: '18:30', genres: ['electronic', 'house'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Nuclear Digital Transistor', day: 'friday', stage: 'club-coke', startTime: '18:30', endTime: '19:30', genres: ['electronic', 'techno'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Mystery Affair', day: 'friday', stage: 'club-coke', startTime: '19:30', endTime: '21:00', genres: ['electronic', 'house', 'funk'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Prins Thomas', day: 'friday', stage: 'club-coke', startTime: '21:00', endTime: '22:30', genres: ['electronic', 'house', 'dj'], tier: 'mid', club: true },
-  { id: makeId(), name: 'Ceberus Greek', day: 'friday', stage: 'club-coke', startTime: '22:30', endTime: '23:30', genres: ['electronic', 'techno'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Dharma', day: 'friday', stage: 'club-coke', startTime: '23:30', endTime: '00:30', genres: ['electronic', 'techno'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Joint4Nine', day: 'friday', stage: 'club-coke', startTime: '00:30', endTime: '01:30', genres: ['electronic', 'house'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Byron The Aquarius', day: 'friday', stage: 'club-coke', startTime: '01:30', endTime: '03:00', genres: ['house', 'electronic', 'soul'], tier: 'mid', club: true },
+  { id: makeId(), name: 'Sylvana', day: 'friday', stage: 'club-coke', startTime: '17:30', endTime: '18:30', genres: ['electronic', 'house'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Nuclear Digital Transistor', day: 'friday', stage: 'club-coke', startTime: '18:30', endTime: '19:30', genres: ['electronic', 'techno'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Mystery Affair', day: 'friday', stage: 'club-coke', startTime: '19:30', endTime: '21:00', genres: ['electronic', 'house', 'funk'], tier: 'mid', isClub: true },
+  { id: makeId(), name: 'Prins Thomas', day: 'friday', stage: 'club-coke', startTime: '21:00', endTime: '22:30', genres: ['electronic', 'house', 'dj'], tier: 'mid', isClub: true },
+  { id: makeId(), name: 'Ceberus Greek', day: 'friday', stage: 'club-coke', startTime: '22:30', endTime: '23:30', genres: ['electronic', 'techno'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Dharma', day: 'friday', stage: 'club-coke', startTime: '23:30', endTime: '00:30', genres: ['electronic', 'house'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Joint4Nine', day: 'friday', stage: 'club-coke', startTime: '00:30', endTime: '01:30', genres: ['electronic', 'house'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Byron The Aquarius', day: 'friday', stage: 'club-coke', startTime: '01:30', endTime: '03:00', genres: ['electronic', 'house', 'soul'], tier: 'mid', isClub: true },
 ];
 
-// SÁBADO CLUBS
 const CLUBS_SATURDAY = [
-  // AORA Durex
-  { id: makeId(), name: 'Los Vagabundos del Dharma', day: 'saturday', stage: 'club-aora', startTime: '17:30', endTime: '18:30', genres: ['rock', 'latin'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'La Tigresa del Oriente', day: 'saturday', stage: 'club-aora', startTime: '19:00', endTime: '19:45', genres: ['latin', 'pop'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Cris Arias DJ Set', day: 'saturday', stage: 'club-aora', startTime: '20:00', endTime: '21:30', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Disco Amore DJ Set', day: 'saturday', stage: 'club-aora', startTime: '21:30', endTime: '23:30', genres: ['electronic', 'house', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'SOS DJ Set', day: 'saturday', stage: 'club-aora', startTime: '01:30', endTime: '03:00', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
+  // AORA (Durex)
+  { id: makeId(), name: 'Los Vagabundos del Dharma', day: 'saturday', stage: 'club-aora', startTime: '17:30', endTime: '18:30', genres: ['rock', 'latin'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'La Tigresa del Oriente', day: 'saturday', stage: 'club-aora', startTime: '19:00', endTime: '19:45', genres: ['latin', 'pop'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Cris Arias DJ Set', day: 'saturday', stage: 'club-aora', startTime: '20:00', endTime: '21:30', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Disco Amore DJ Set', day: 'saturday', stage: 'club-aora', startTime: '21:30', endTime: '23:30', genres: ['electronic', 'house', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'SOS DJ Set', day: 'saturday', stage: 'club-aora', startTime: '01:30', endTime: '03:00', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
 
-  // ROMPE x Sprite
-  { id: makeId(), name: 'Alexxa Ro', day: 'saturday', stage: 'club-rompe', startTime: '16:00', endTime: '17:00', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Felipevs', day: 'saturday', stage: 'club-rompe', startTime: '17:00', endTime: '18:00', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Tatitron B2B Rivera', day: 'saturday', stage: 'club-rompe', startTime: '18:00', endTime: '19:30', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Blazekha B2B Twelve', day: 'saturday', stage: 'club-rompe', startTime: '19:30', endTime: '21:00', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Builes DJ', day: 'saturday', stage: 'club-rompe', startTime: '22:00', endTime: '23:00', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Jordan Lex F2F Blazekha', day: 'saturday', stage: 'club-rompe', startTime: '23:00', endTime: '00:30', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Rivera B2B Builes DJ', day: 'saturday', stage: 'club-rompe', startTime: '02:00', endTime: '03:00', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
+  // Rompe x Sprite (La Pérgola vs Hi I'm Sci)
+  { id: makeId(), name: 'Alexxa Ro', day: 'saturday', stage: 'club-rompe', startTime: '16:00', endTime: '17:00', genres: ['electronic', 'pop', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Felipevs', day: 'saturday', stage: 'club-rompe', startTime: '17:00', endTime: '18:00', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Tatitron B2B Rivera', day: 'saturday', stage: 'club-rompe', startTime: '18:00', endTime: '19:30', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Blazekha B2B Twelve', day: 'saturday', stage: 'club-rompe', startTime: '19:30', endTime: '21:00', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Builes DJ', day: 'saturday', stage: 'club-rompe', startTime: '22:00', endTime: '23:00', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Jordan Lex F2F Blazekha', day: 'saturday', stage: 'club-rompe', startTime: '23:00', endTime: '00:30', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Rivera B2B Builes DJ', day: 'saturday', stage: 'club-rompe', startTime: '02:00', endTime: '03:00', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
 
   // Club FEP x Coke Studio (Salsa)
-  { id: makeId(), name: 'Martín Cubillos', day: 'saturday', stage: 'club-coke', startTime: '17:00', endTime: '18:00', genres: ['latin', 'house', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Gabo Forero', day: 'saturday', stage: 'club-coke', startTime: '18:00', endTime: '19:00', genres: ['latin', 'house', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Matta', day: 'saturday', stage: 'club-coke', startTime: '19:00', endTime: '20:00', genres: ['electronic', 'house'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Harvy Valencia', day: 'saturday', stage: 'club-coke', startTime: '20:00', endTime: '21:30', genres: ['electronic', 'house'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Calussa', day: 'saturday', stage: 'club-coke', startTime: '21:30', endTime: '23:00', genres: ['electronic', 'house'], tier: 'mid', club: true },
-  { id: makeId(), name: 'Milo Cedeño', day: 'saturday', stage: 'club-coke', startTime: '23:00', endTime: '00:00', genres: ['electronic', 'house'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Almma B2B Aimee', day: 'saturday', stage: 'club-coke', startTime: '00:00', endTime: '01:00', genres: ['electronic', 'house', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Guy Mantzur', day: 'saturday', stage: 'club-coke', startTime: '01:00', endTime: '03:00', genres: ['electronic', 'house', 'techno'], tier: 'mid', club: true },
+  { id: makeId(), name: 'Martín Cubillos', day: 'saturday', stage: 'club-coke', startTime: '17:00', endTime: '18:00', genres: ['latin', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Gabo Forero', day: 'saturday', stage: 'club-coke', startTime: '18:00', endTime: '19:00', genres: ['latin', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Matta', day: 'saturday', stage: 'club-coke', startTime: '19:00', endTime: '20:00', genres: ['latin', 'electronic'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Harvy Valencia', day: 'saturday', stage: 'club-coke', startTime: '20:00', endTime: '21:30', genres: ['electronic', 'house', 'latin'], tier: 'mid', isClub: true },
+  { id: makeId(), name: 'Calussa', day: 'saturday', stage: 'club-coke', startTime: '21:30', endTime: '23:00', genres: ['electronic', 'house'], tier: 'mid', isClub: true },
+  { id: makeId(), name: 'Milo Cedeño', day: 'saturday', stage: 'club-coke', startTime: '23:00', endTime: '00:00', genres: ['electronic', 'house'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Almma B2B Aimee', day: 'saturday', stage: 'club-coke', startTime: '00:00', endTime: '01:00', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Guy Mantzur', day: 'saturday', stage: 'club-coke', startTime: '01:00', endTime: '03:00', genres: ['electronic', 'house', 'techno'], tier: 'mid', isClub: true },
 ];
 
-// DOMINGO CLUBS
 const CLUBS_SUNDAY = [
-  // AORA Durex
-  { id: makeId(), name: 'Jano von Skorpio DJ Set', day: 'sunday', stage: 'club-aora', startTime: '17:30', endTime: '19:00', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'LOMAASBELLO', day: 'sunday', stage: 'club-aora', startTime: '19:15', endTime: '20:15', genres: ['latin', 'pop'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'GOTTMIK DJ Set', day: 'sunday', stage: 'club-aora', startTime: '20:30', endTime: '22:00', genres: ['pop', 'electronic', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Masha Ni DJ Set', day: 'sunday', stage: 'club-aora', startTime: '22:00', endTime: '23:30', genres: ['electronic', 'house', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Patojazo DJ Set', day: 'sunday', stage: 'club-aora', startTime: '23:30', endTime: '01:00', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
+  // AORA (Durex)
+  { id: makeId(), name: 'Jano von Skorpio DJ Set', day: 'sunday', stage: 'club-aora', startTime: '17:30', endTime: '19:00', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'LOMAASBELLO', day: 'sunday', stage: 'club-aora', startTime: '19:15', endTime: '20:15', genres: ['latin', 'pop'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'GOTTMIK DJ Set', day: 'sunday', stage: 'club-aora', startTime: '20:30', endTime: '22:00', genres: ['pop', 'dj', 'electronic'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Masha Ni DJ Set', day: 'sunday', stage: 'club-aora', startTime: '22:00', endTime: '23:30', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Patojazo DJ Set', day: 'sunday', stage: 'club-aora', startTime: '23:30', endTime: '01:00', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
 
-  // ROMPE x Sprite
-  { id: makeId(), name: 'El Show de Jimmy', day: 'sunday', stage: 'club-rompe', startTime: '16:00', endTime: '17:00', genres: ['latin', 'pop'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Chris Durán', day: 'sunday', stage: 'club-rompe', startTime: '17:00', endTime: '18:00', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Dj Lolita B2B Lagoona DJ', day: 'sunday', stage: 'club-rompe', startTime: '18:00', endTime: '19:30', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Julietota B2B Mariboss', day: 'sunday', stage: 'club-rompe', startTime: '19:30', endTime: '21:00', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Bayonats', day: 'sunday', stage: 'club-rompe', startTime: '21:00', endTime: '22:00', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Querubín', day: 'sunday', stage: 'club-rompe', startTime: '22:00', endTime: '23:00', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Michi Gyal F2F Miss Champús', day: 'sunday', stage: 'club-rompe', startTime: '23:00', endTime: '00:30', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'TORNALL', day: 'sunday', stage: 'club-rompe', startTime: '00:30', endTime: '02:00', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Sir Philis B2B Paquita Gallego', day: 'sunday', stage: 'club-rompe', startTime: '02:00', endTime: '03:00', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
+  // Rompe x Sprite (Suelta como Gabete vs Tejo Turmequé)
+  { id: makeId(), name: 'El Show de Jimmy', day: 'sunday', stage: 'club-rompe', startTime: '16:00', endTime: '17:00', genres: ['latin', 'pop'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Chris Durán', day: 'sunday', stage: 'club-rompe', startTime: '17:00', endTime: '18:00', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Dj Lolita B2B Lagoona DJ', day: 'sunday', stage: 'club-rompe', startTime: '18:00', endTime: '19:30', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Julietota B2B Mariboss', day: 'sunday', stage: 'club-rompe', startTime: '19:30', endTime: '21:00', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Bayonats', day: 'sunday', stage: 'club-rompe', startTime: '21:00', endTime: '22:00', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Querubín', day: 'sunday', stage: 'club-rompe', startTime: '22:00', endTime: '23:00', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Michi Gyal F2F Miss Champús', day: 'sunday', stage: 'club-rompe', startTime: '23:00', endTime: '00:30', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'TORNALL', day: 'sunday', stage: 'club-rompe', startTime: '00:30', endTime: '02:00', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Sir Philis B2B Paquita Gallego', day: 'sunday', stage: 'club-rompe', startTime: '02:00', endTime: '03:00', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
 
-  // Club FEP x Coke Studio (MUAKK)
-  { id: makeId(), name: 'Yajaira La Beyaca', day: 'sunday', stage: 'club-coke', startTime: '17:00', endTime: '17:45', genres: ['latin', 'electronic'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Nixss', day: 'sunday', stage: 'club-coke', startTime: '17:45', endTime: '18:45', genres: ['electronic', 'dj'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Isablu', day: 'sunday', stage: 'club-coke', startTime: '18:45', endTime: '19:45', genres: ['electronic', 'house'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Aleroj', day: 'sunday', stage: 'club-coke', startTime: '19:45', endTime: '21:15', genres: ['electronic', 'house'], tier: 'emerging', club: true },
-  { id: makeId(), name: '1tbsp', day: 'sunday', stage: 'club-coke', startTime: '21:15', endTime: '22:45', genres: ['electronic', 'house'], tier: 'emerging', club: true },
-  { id: makeId(), name: '2AT', day: 'sunday', stage: 'club-coke', startTime: '22:45', endTime: '00:15', genres: ['electronic', 'techno'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Crrdr', day: 'sunday', stage: 'club-coke', startTime: '00:15', endTime: '01:30', genres: ['electronic', 'techno'], tier: 'emerging', club: true },
-  { id: makeId(), name: 'Noise Mafia', day: 'sunday', stage: 'club-coke', startTime: '01:30', endTime: '03:00', genres: ['electronic', 'techno', 'bass-music'], tier: 'emerging', club: true },
+  // Club FEP x Coke Studio (MAAKK)
+  { id: makeId(), name: 'Yajaira La Beyaca', day: 'sunday', stage: 'club-coke', startTime: '17:00', endTime: '17:45', genres: ['latin', 'pop'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Nixss', day: 'sunday', stage: 'club-coke', startTime: '17:45', endTime: '18:45', genres: ['electronic', 'dj'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Isablu', day: 'sunday', stage: 'club-coke', startTime: '18:45', endTime: '19:45', genres: ['electronic', 'house'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Aleroj', day: 'sunday', stage: 'club-coke', startTime: '19:45', endTime: '21:15', genres: ['electronic', 'house'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: '1tbsp', day: 'sunday', stage: 'club-coke', startTime: '21:15', endTime: '22:45', genres: ['electronic', 'house'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: '2AT', day: 'sunday', stage: 'club-coke', startTime: '22:45', endTime: '00:15', genres: ['electronic', 'techno'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Crrdr', day: 'sunday', stage: 'club-coke', startTime: '00:15', endTime: '01:30', genres: ['electronic', 'techno'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Noise Mafia', day: 'sunday', stage: 'club-coke', startTime: '01:30', endTime: '03:00', genres: ['electronic', 'techno', 'bass-music'], tier: 'emerging', isClub: true },
 ];
 
 export const CLUB_ARTISTS = [...CLUBS_FRIDAY, ...CLUBS_SATURDAY, ...CLUBS_SUNDAY];
-export const ALL_ARTISTS = [...ARTISTS, ...CLUB_ARTISTS];
 
-// Helper: get artists for a specific day (with optional club inclusion)
+// Combined getter: all artists (optionally with clubs)
+export function getAllArtists(includeClubs = false) {
+  return includeClubs ? [...ARTISTS, ...CLUB_ARTISTS] : ARTISTS;
+}
+
+// Helper: get artists for a specific day
 export function getArtistsByDay(dayId, includeClubs = false) {
-  const source = includeClubs ? ALL_ARTISTS : ARTISTS;
-  return source.filter(a => a.day === dayId);
+  const all = includeClubs ? [...ARTISTS, ...CLUB_ARTISTS] : ARTISTS;
+  return all.filter(a => a.day === dayId);
 }
 
 // Helper: get artists for a specific stage on a specific day
 export function getArtistsByDayAndStage(dayId, stageId) {
-  return ALL_ARTISTS.filter(a => a.day === dayId && a.stage === stageId);
+  const all = [...ARTISTS, ...CLUB_ARTISTS];
+  return all.filter(a => a.day === dayId && a.stage === stageId);
 }
 
 // Helper: get a single artist by ID
 export function getArtistById(id) {
-  return ALL_ARTISTS.find(a => a.id === id);
+  return ARTISTS.find(a => a.id === id) || CLUB_ARTISTS.find(a => a.id === id);
 }
 
 // Helper: parse time string to minutes since midnight (handles next-day times)
@@ -315,13 +316,4 @@ export function timesOverlap(start1, end1, start2, end2) {
 // Helper: get stage info by id
 export function getStage(stageId) {
   return STAGES.find(s => s.id === stageId);
-}
-
-// Helper: get main stages vs club stages
-export function getMainStages() {
-  return STAGES.filter(s => !s.club);
-}
-
-export function getClubStages() {
-  return STAGES.filter(s => s.club);
 }

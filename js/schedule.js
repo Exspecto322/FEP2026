@@ -2,7 +2,7 @@
 // FEP2026 — Schedule Grid Rendering & Interactions
 // ============================================================
 
-import { STAGES, DAYS, TIERS, getArtistsByDay, getStage, getMainStages, getClubStages, timeToMinutes, timesOverlap } from './data.js';
+import { STAGES, DAYS, TIERS, getArtistsByDay, getStage, timeToMinutes, timesOverlap } from './data.js';
 
 const GRID_START = 14 * 60;  // 14:00  
 const GRID_END = (24 + 3) * 60; // 03:00 next day
@@ -12,14 +12,13 @@ const ROW_HEIGHT_PER_MINUTE = 3; // px per minute
 /**
  * Render the schedule grid for a given day
  */
-export function renderScheduleGrid(dayId, selectedIds, onToggle, includeClubs = false) {
+export function renderScheduleGrid(dayId, selectedIds, onToggle) {
   const container = document.getElementById('schedule-grid');
   container.innerHTML = '';
   container.className = 'schedule-grid';
 
   const dayInfo = DAYS.find(d => d.id === dayId);
-  const artists = getArtistsByDay(dayId, includeClubs);
-  const stagesToShow = includeClubs ? STAGES : getMainStages();
+  const artists = getArtistsByDay(dayId);
 
   // Create time axis
   const timeAxis = document.createElement('div');
@@ -38,7 +37,7 @@ export function renderScheduleGrid(dayId, selectedIds, onToggle, includeClubs = 
   const stagesContainer = document.createElement('div');
   stagesContainer.className = 'stages-container';
 
-  for (const stage of stagesToShow) {
+  for (const stage of STAGES) {
     const col = document.createElement('div');
     col.className = 'stage-column';
     col.dataset.stage = stage.id;
@@ -205,12 +204,12 @@ export function updateSelectionVisuals(selectedIds) {
 /**
  * Render the compact list view for a given day
  */
-export function renderScheduleList(dayId, selectedIds, onToggle, includeClubs = false) {
+export function renderScheduleList(dayId, selectedIds, onToggle) {
   const container = document.getElementById('schedule-grid');
   container.innerHTML = '';
   container.className = 'schedule-list-view';
 
-  const artists = getArtistsByDay(dayId, includeClubs)
+  const artists = getArtistsByDay(dayId)
     .filter(a => !a.genres.includes('performance'))
     .sort((a, b) => {
       const ta = timeToMinutes(a.startTime);
