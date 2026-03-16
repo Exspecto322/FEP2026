@@ -196,6 +196,31 @@ function toggleArtist(artistId) {
   rerenderMap();
 }
 
+function buildConflictMap(conflicts) {
+  const map = new Map();
+
+  for (const [a, b] of conflicts) {
+    if (!map.has(a.id)) map.set(a.id, []);
+    if (!map.has(b.id)) map.set(b.id, []);
+
+    const aConflicts = map.get(a.id);
+    const bConflicts = map.get(b.id);
+    const bName = getArtistDisplayName(b);
+    const aName = getArtistDisplayName(a);
+
+    if (!aConflicts.includes(bName)) aConflicts.push(bName);
+    if (!bConflicts.includes(aName)) bConflicts.push(aName);
+  }
+
+  return map;
+}
+
+function formatConflictNames(names, limit = 2) {
+  if (!names?.length) return '';
+  if (names.length <= limit) return names.join(' · ');
+  return `${names.slice(0, limit).join(' · ')} +${names.length - limit}`;
+}
+
 // ============================================================
 // My Schedule Panel
 // ============================================================
@@ -219,10 +244,17 @@ function updateMySchedule() {
 
     // Show conflict summary
     const allConflicts = getConflicts(selectedIds, ARTISTS);
+    const allConflictPairs = allConflicts
+      .slice(0, 2)
+      .map(([a, b]) => `${getArtistDisplayName(a)} ↔ ${getArtistDisplayName(b)}`);
+
     if (allConflicts.length > 0) {
       const warning = document.createElement('div');
       warning.className = 'conflicts-summary';
-      warning.innerHTML = `<p>⚠️ Tienes <strong>${allConflicts.length}</strong> conflicto${allConflicts.length > 1 ? 's' : ''} de horario</p>`;
+      warning.innerHTML = `
+        <p>⚠️ Tienes <strong>${allConflicts.length}</strong> conflicto${allConflicts.length > 1 ? 's' : ''} de horario</p>
+        <div class="conflicts-summary-list">${allConflictPairs.join('<span>·</span>')}${allConflicts.length > 2 ? `<span>·</span><span>+${allConflicts.length - 2} más</span>` : ''}</div>
+      `;
       panel.appendChild(warning);
     }
 
@@ -243,15 +275,13 @@ function updateMySchedule() {
 
       // Check conflicts within this day
       const conflicts = getConflicts(selectedIds, ARTISTS.filter(a => a.day === dayId));
-      const conflictIds = new Set();
-      for (const [a, b] of conflicts) {
-        conflictIds.add(a.id);
-        conflictIds.add(b.id);
-      }
+      const conflictMap = buildConflictMap(conflicts);
+      const conflictIds = new Set(conflictMap.keys());
 
       for (const artist of dayArtists) {
         const stage = STAGES.find(s => s.id === artist.stage);
         const displayName = getArtistDisplayName(artist);
+        const conflictNames = conflictMap.get(artist.id) || [];
         const card = document.createElement('div');
         card.className = `my-artist-card ${conflictIds.has(artist.id) ? 'conflict' : ''}`;
 
@@ -260,7 +290,7 @@ function updateMySchedule() {
             <div class="my-artist-time">${artist.startTime} – ${artist.endTime}</div>
             <div class="my-artist-name">${displayName} ${artist.isClub ? '<span class="club-tag-inline">🎉 CLUBES</span>' : ''}${artist.isSpecial ? ` <span class="special-tag-inline">${artist.specialLabel || 'Especial'}</span>` : ''}</div>
             <div class="my-artist-stage" style="color: ${stage.color}">${artist.isClub ? getArtistMetaLabel(artist) : stage.name}</div>
-            ${conflictIds.has(artist.id) ? '<div class="conflict-badge">⚠️ Conflicto de horario</div>' : ''}
+            ${conflictIds.has(artist.id) ? `<div class="conflict-badge">⚠️ Conflicto con ${formatConflictNames(conflictNames)}</div>` : ''}
           </div>
           <button class="my-artist-remove" title="Quitar">✕</button>
         `;
@@ -284,11 +314,8 @@ function renderClubesPanel() {
   container.innerHTML = '';
   const dayLabels = { friday: 'Viernes 20', saturday: 'Sábado 21', sunday: 'Domingo 22' };
   const clubes = getClubes();
-  const conflictIds = new Set();
-  for (const [a, b] of getConflicts(selectedIds, ARTISTS)) {
-    conflictIds.add(a.id);
-    conflictIds.add(b.id);
-  }
+  const conflictMap = buildConflictMap(getConflicts(selectedIds, ARTISTS));
+  const conflictIds = new Set(conflictMap.keys());
 
   // Group by day
   for (const dayId of ['friday', 'saturday', 'sunday']) {
@@ -344,12 +371,13 @@ function renderClubesPanel() {
         const isSelected = selectedIds.has(club.id);
         const hasConflict = isSelected && conflictIds.has(club.id);
         const displayName = getArtistDisplayName(club);
+        const conflictNames = conflictMap.get(club.id) || [];
         const detailBits = [];
         if (club.isSpecial && club.specialNote) {
           detailBits.push(`<span class="clubes-entry-meta">${club.specialNote}</span>`);
         }
         if (hasConflict) {
-          detailBits.push('<span class="clubes-entry-conflict">Conflicto</span>');
+          detailBits.push(`<span class="clubes-entry-conflict">Conflicto con ${formatConflictNames(conflictNames)}</span>`);
         }
 
         const row = document.createElement('button');

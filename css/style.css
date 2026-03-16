@@ -568,6 +568,7 @@ input, textarea {
 .my-artist-card.conflict {
   border-left: 3px solid var(--conflict);
   background: rgba(255, 77, 77, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(255, 77, 77, 0.1);
 }
 
 .my-artist-info {
@@ -609,18 +610,39 @@ input, textarea {
 }
 
 .conflict-badge {
-  font-size: 0.7rem;
-  color: var(--conflict);
-  margin-top: 2px;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255, 77, 77, 0.12);
+  border: 1px solid rgba(255, 77, 77, 0.2);
+  font-size: 0.68rem;
+  color: #ff9c9c;
+  margin-top: 6px;
+  font-weight: 700;
 }
 
 .conflicts-summary {
+  display: grid;
+  gap: 8px;
   padding: 10px 14px;
   border-radius: var(--border-radius-sm);
   background: rgba(255, 77, 77, 0.1);
   border: 1px solid rgba(255, 77, 77, 0.2);
   margin-bottom: 12px;
   font-size: 0.85rem;
+}
+
+.conflicts-summary-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: #ffb2b2;
+}
+
+.conflicts-summary-list span {
+  color: var(--text-muted);
 }
 
 .empty-state {
@@ -1048,9 +1070,9 @@ input, textarea {
 }
 
 .panel-map {
-  max-width: 1500px;
+  max-width: 1780px;
   margin: 0 auto;
-  padding: 24px 20px 40px;
+  padding: 22px 18px 48px;
 }
 
 /* ── Clubes ── */
@@ -1245,11 +1267,15 @@ input, textarea {
 }
 
 .clubes-entry-conflict {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255, 77, 77, 0.12);
+  border: 1px solid rgba(255, 77, 77, 0.22);
   font-size: 0.68rem;
   font-weight: 700;
-  color: var(--conflict);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  color: #ff9c9c;
 }
 
 /* ── Map View ── */
@@ -1300,12 +1326,14 @@ input, textarea {
 .map-caption {
   color: var(--text-secondary);
   font-size: 0.82rem;
+  max-width: 520px;
+  text-align: right;
 }
 
 .map-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.8fr);
-  gap: 20px;
+  grid-template-columns: minmax(0, 1.9fr) minmax(300px, 340px);
+  gap: 24px;
   align-items: start;
 }
 
@@ -1316,9 +1344,9 @@ input, textarea {
 .map-shell {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
   border: 1px solid var(--border-subtle);
-  border-radius: 24px;
-  padding: 14px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+  border-radius: 28px;
+  padding: 18px;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.28);
 }
 
 .map-canvas {
@@ -1326,8 +1354,9 @@ input, textarea {
   width: 100%;
   aspect-ratio: 2160 / 1350;
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: 22px;
   background: #0b120f;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 .map-base-image {
@@ -1350,17 +1379,17 @@ input, textarea {
 .map-route-shadow {
   fill: none;
   stroke: rgba(0, 0, 0, 0.45);
-  stroke-width: 1.7;
+  stroke-width: 2.1;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
 .map-route-line {
   fill: none;
-  stroke-width: 1.1;
+  stroke-width: 1.65;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-dasharray: 3 2;
+  stroke-dasharray: 3.5 2.2;
   animation: dash-route 22s linear infinite;
   filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.22));
 }
@@ -1387,6 +1416,7 @@ input, textarea {
   gap: 8px;
   pointer-events: auto;
   cursor: default;
+  z-index: 2;
 }
 
 .map-node-core {
@@ -1402,6 +1432,18 @@ input, textarea {
   font-size: 0.66rem;
   font-weight: 800;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.26);
+  transition: transform 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out), background 0.2s var(--ease-out);
+}
+
+.map-node.is-layer .map-node-core {
+  width: 26px;
+  height: 26px;
+  background: var(--node-color);
+  color: #101012;
+  border-color: rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 0 0 7px color-mix(in srgb, var(--node-color) 18%, transparent),
+    0 10px 24px rgba(0, 0, 0, 0.28);
 }
 
 .map-node.is-route .map-node-core {
@@ -1410,6 +1452,10 @@ input, textarea {
   background: var(--node-color);
   color: #101012;
   border-color: rgba(255, 255, 255, 0.95);
+}
+
+.map-node.is-route {
+  z-index: 4;
 }
 
 .map-node.is-split .map-node-core {
@@ -1426,6 +1472,12 @@ input, textarea {
   white-space: nowrap;
   color: var(--text-primary);
   backdrop-filter: blur(10px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+}
+
+.map-node.is-layer .map-node-label {
+  background: color-mix(in srgb, var(--node-color) 18%, rgba(13, 13, 18, 0.9));
+  border-color: color-mix(in srgb, var(--node-color) 42%, rgba(255, 255, 255, 0.14));
 }
 
 .map-sidebar {
@@ -1455,7 +1507,10 @@ input, textarea {
 
 .map-route-step.conflict {
   border-left: 3px solid var(--conflict);
-  padding-left: 10px;
+  padding: 10px 12px 10px 10px;
+  margin-left: -10px;
+  border-radius: 16px;
+  background: rgba(255, 77, 77, 0.08);
 }
 
 .map-route-step-index {
@@ -1505,10 +1560,16 @@ input, textarea {
 }
 
 .map-route-warning {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(255, 77, 77, 0.12);
+  border: 1px solid rgba(255, 77, 77, 0.2);
   font-size: 0.68rem;
-  color: var(--conflict);
+  color: #ff9c9c;
   font-weight: 700;
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 .map-route-segment {
@@ -1557,17 +1618,34 @@ input, textarea {
   color: var(--text-secondary);
   font-size: 0.74rem;
   font-weight: 700;
-  transition: all 0.2s var(--ease-out);
+  opacity: 0.8;
+  transition: transform 0.2s var(--ease-out), border-color 0.2s var(--ease-out), background 0.2s var(--ease-out), opacity 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out), color 0.2s var(--ease-out);
+}
+
+.map-layer-chip:hover {
+  opacity: 1;
+  border-color: var(--border-accent);
+  transform: translateY(-1px);
 }
 
 .map-layer-chip.active {
   background: color-mix(in srgb, var(--layer-color) 16%, transparent);
   border-color: color-mix(in srgb, var(--layer-color) 45%, transparent);
   color: var(--text-primary);
+  opacity: 1;
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--layer-color) 16%, transparent);
 }
 
-.map-layer-chip-icon {
-  color: var(--layer-color);
+.map-layer-chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--layer-color);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--layer-color) 40%, transparent);
+}
+
+.map-layer-chip.active .map-layer-chip-dot {
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--layer-color) 18%, transparent);
 }
 
 .map-legend-image {
@@ -1618,6 +1696,13 @@ input, textarea {
 .map-legend-copy span {
   font-size: 0.7rem;
   color: var(--text-secondary);
+}
+
+.map-sidebar-note {
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  line-height: 1.45;
 }
 
 /* ── Toast ── */
@@ -1719,6 +1804,11 @@ input, textarea {
   .map-toolbar {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .map-caption {
+    max-width: none;
+    text-align: left;
   }
 
   .map-layout {
