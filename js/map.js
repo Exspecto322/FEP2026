@@ -13,30 +13,27 @@ const MAP_REFERENCE = {
 };
 
 const MAP_IMAGE_SRC = 'assets/images/map/fep-site-map.png';
+const FESTIVAL_ENTRY_ID = 'entrance-festival';
 
 export const DEFAULT_MAP_LAYERS = [];
 
 const SUPPORT_STOP_META = {
   food: {
-    icon: '🍔',
     label: 'Comida',
     badgeLabel: 'Comer',
     color: '#FF8A00',
   },
   water: {
-    icon: '💧',
     label: 'Agua',
     badgeLabel: 'Agua',
     color: '#7CE7FF',
   },
   bathroom: {
-    icon: '🚻',
     label: 'Baños',
     badgeLabel: 'Baños',
     color: '#4DD0FF',
   },
   service: {
-    icon: '◎',
     label: 'Servicios',
     badgeLabel: 'Extra',
     color: '#64E38B',
@@ -463,7 +460,6 @@ function createSupportSuggestion(type, location, title, reason) {
   return {
     id: `${type}-${location.id}`,
     type,
-    icon: meta.icon,
     color: meta.color,
     label: meta.label,
     badgeLabel,
@@ -585,6 +581,15 @@ function compressRouteLocations(items) {
   return locations;
 }
 
+function prependFestivalEntrance(pathLocations) {
+  if (pathLocations.length === 0) return [];
+  const entrance = getLocation(FESTIVAL_ENTRY_ID);
+  if (!entrance || pathLocations[0]?.id === entrance.id) {
+    return pathLocations;
+  }
+  return [entrance, ...pathLocations];
+}
+
 function buildRouteMetrics(pathLocations) {
   let totalWalkMinutes = 0;
   const segments = [];
@@ -657,7 +662,7 @@ function buildPersonalRoute(dayId, selectedIds) {
     }
   }
 
-  const pathLocations = compressRouteLocations(items);
+  const pathLocations = prependFestivalEntrance(compressRouteLocations(items));
   const metrics = buildRouteMetrics(pathLocations);
   const suggestions = buildRouteSuggestions(items, metrics.segments);
 
@@ -729,7 +734,7 @@ function buildGroupRoute(dayId, mergeState) {
     }
   }
 
-  const pathLocations = compressRouteLocations(items);
+  const pathLocations = prependFestivalEntrance(compressRouteLocations(items));
   const metrics = buildRouteMetrics(pathLocations);
   const suggestions = buildRouteSuggestions(items, metrics.segments);
 
@@ -842,38 +847,19 @@ function buildRouteSvg(routeData, mode) {
   }
 
   const pathData = buildRoundedPath(routePoints);
-  const stopIds = new Set(routeData.pathLocations.map(location => location.id));
-  const breadcrumbs = routePoints
-    .filter((point, index) => index > 0 && index < routePoints.length - 1 && !stopIds.has(point.id))
-    .map(point => `<circle class="map-route-breadcrumb ${mode}" cx="${point.x}" cy="${point.y}" r="0.42" />`)
-    .join('');
   const directionMarkers = routeData.segments
-    .map((segment, index) => {
+    .map(segment => {
       const point = getPointAlongPolyline(segment.points, 0.5);
       if (!point) return '';
-      return `
-        <g class="map-route-arrow ${mode}" transform="translate(${point.x} ${point.y}) rotate(${point.angle})">
-          <circle class="map-route-arrow-backdrop" cx="0" cy="0" r="1.7" />
-          <path class="map-route-arrow-glyph" d="M -0.6 -0.5 L 0.65 0 L -0.6 0.5" />
-          <text class="map-route-arrow-label" x="0" y="3.25" text-anchor="middle">${index + 1}→${index + 2}</text>
-        </g>
-      `;
+      return `<path class="map-route-arrow ${mode}" d="M -0.75 -0.55 L 0.55 0 L -0.75 0.55" transform="translate(${point.x} ${point.y}) rotate(${point.angle})" />`;
     })
     .join('');
-  const start = routeData.pathLocations[0];
-  const end = routeData.pathLocations[routeData.pathLocations.length - 1];
-  const endpoints = [
-    start ? `<circle class="map-route-endcap start ${mode}" cx="${start.x}" cy="${start.y}" r="1.7" />` : '',
-    end && end.id !== start?.id ? `<circle class="map-route-endcap end ${mode}" cx="${end.x}" cy="${end.y}" r="1.7" />` : '',
-  ].join('');
 
   return `
     <path class="map-route-track ${mode}" d="${pathData}" pathLength="100" />
     <path class="map-route-shadow" d="${pathData}" />
     <path class="map-route-line ${mode}" d="${pathData}" pathLength="100" />
     <path class="map-route-flow ${mode}" d="${pathData}" pathLength="100" />
-    ${breadcrumbs}
-    ${endpoints}
     ${directionMarkers}
   `;
 }
@@ -904,29 +890,29 @@ function formatConflictList(names, limit = 2) {
 
 function buildNearbyChips(item) {
   const chips = [
-    item.nearbyFood ? { type: 'food', icon: SUPPORT_STOP_META.food.icon, label: item.nearbyFood.shortLabel } : null,
-    item.nearbyWater ? { type: 'water', icon: SUPPORT_STOP_META.water.icon, label: item.nearbyWater.shortLabel } : null,
-    item.nearbyBathroom ? { type: 'bathroom', icon: SUPPORT_STOP_META.bathroom.icon, label: item.nearbyBathroom.shortLabel } : null,
-    item.nearbyService ? { type: 'service', icon: SUPPORT_STOP_META.service.icon, label: item.nearbyService.shortLabel } : null,
+    item.nearbyFood ? { type: 'food', label: item.nearbyFood.shortLabel, badge: SUPPORT_STOP_META.food.badgeLabel } : null,
+    item.nearbyWater ? { type: 'water', label: item.nearbyWater.shortLabel, badge: SUPPORT_STOP_META.water.badgeLabel } : null,
+    item.nearbyBathroom ? { type: 'bathroom', label: item.nearbyBathroom.shortLabel, badge: SUPPORT_STOP_META.bathroom.badgeLabel } : null,
+    item.nearbyService ? { type: 'service', label: item.nearbyService.shortLabel, badge: SUPPORT_STOP_META.service.badgeLabel } : null,
   ].filter(Boolean);
 
   return chips
-    .map(chip => `<span class="map-nearby-chip ${chip.type}">${chip.icon} ${chip.label}</span>`)
+    .map(chip => `<span class="map-nearby-chip ${chip.type}"><span class="map-nearby-chip-kind">${chip.badge}</span><span>${chip.label}</span></span>`)
     .join('');
 }
 
 function renderModeButtons(target, preferredMode, hasGroupRoute, onSetMode) {
   target.innerHTML = '';
   const modes = [
-    { id: 'personal', label: 'Mi ruta', icon: '🎵', disabled: false },
-    { id: 'group', label: 'Ruta grupo', icon: '🤝', disabled: !hasGroupRoute },
+    { id: 'personal', label: 'Mi ruta', disabled: false },
+    { id: 'group', label: 'Ruta grupo', disabled: !hasGroupRoute },
   ];
 
   for (const mode of modes) {
     const button = document.createElement('button');
     button.className = `map-mode-btn ${preferredMode === mode.id ? 'active' : ''}`;
     button.disabled = mode.disabled;
-    button.innerHTML = `<span>${mode.icon}</span><span>${mode.label}</span>`;
+    button.textContent = mode.label;
     button.addEventListener('click', () => onSetMode(mode.id));
     target.appendChild(button);
   }
@@ -986,6 +972,14 @@ function renderRouteSummary(target, routeData, activeMode) {
   `;
   target.appendChild(overview);
 
+  const startsFromEntry = routeData.pathLocations[0]?.id === FESTIVAL_ENTRY_ID;
+  if (startsFromEntry && routeData.segments[0] && routeData.items[0]) {
+    const entryBlock = document.createElement('div');
+    entryBlock.className = 'map-route-entry';
+    entryBlock.textContent = `Ingreso al festival → parada 1 · ~${routeData.segments[0].walkMinutes} min hasta ${routeData.segments[0].to.shortLabel}`;
+    target.appendChild(entryBlock);
+  }
+
   routeData.items.forEach((item, index) => {
     const step = document.createElement('div');
     step.className = `map-route-step ${item.isConflict ? 'conflict' : ''}`;
@@ -1003,8 +997,9 @@ function renderRouteSummary(target, routeData, activeMode) {
     `;
     target.appendChild(step);
 
-    if (index < routeData.segments.length) {
-      const segment = routeData.segments[index];
+    const segmentIndex = startsFromEntry ? index + 1 : index;
+    if (segmentIndex < routeData.segments.length) {
+      const segment = routeData.segments[segmentIndex];
       const segmentEl = document.createElement('div');
       segmentEl.className = 'map-route-segment';
       segmentEl.textContent = `${index + 1} → ${index + 2} · ~${segment.walkMinutes} min hacia ${segment.to.shortLabel}`;
@@ -1055,7 +1050,6 @@ function renderRouteSuggestions(target, routeData, activeMode) {
     card.style.setProperty('--suggestion-color', suggestion.color);
     card.innerHTML = `
       <div class="map-suggestion-index">${index + 1}</div>
-      <div class="map-suggestion-icon">${suggestion.icon}</div>
       <div class="map-suggestion-body">
         <div class="map-suggestion-kicker">${suggestion.badgeLabel}</div>
         <div class="map-suggestion-title">${suggestion.location.shortLabel}</div>
@@ -1073,13 +1067,29 @@ function renderMapNodes(target, visibleLayers, routeData) {
   target.innerHTML = '';
 
   const routeOrdersByLocation = new Map();
-  routeData.pathLocations.forEach((location, index) => {
-    const list = routeOrdersByLocation.get(location.id) || [];
-    list.push(index + 1);
-    routeOrdersByLocation.set(location.id, list);
-  });
+  routeData.pathLocations
+    .filter((location, index) => !(index === 0 && location.id === FESTIVAL_ENTRY_ID))
+    .forEach((location, index) => {
+      const orders = routeOrdersByLocation.get(location.id) || [];
+      orders.push(index + 1);
+      routeOrdersByLocation.set(location.id, orders);
+    });
   const firstStopId = routeData.pathLocations[0]?.id || '';
+  const firstRouteStopId = routeData.pathLocations.find(location => location.id !== FESTIVAL_ENTRY_ID)?.id || '';
   const lastStopId = routeData.pathLocations[routeData.pathLocations.length - 1]?.id || '';
+  const isEntryVisible = firstStopId === FESTIVAL_ENTRY_ID;
+
+  const routeLocationIds = new Set(routeData.pathLocations.map(location => location.id));
+  const routeItemLocationIds = new Set(
+    routeData.items
+      .map(item => item.location?.id)
+      .filter(Boolean)
+  );
+  const repeatLocations = new Set(
+    routeData.pathLocations
+      .map(location => location.id)
+      .filter((locationId, index, list) => list.indexOf(locationId) !== index)
+  );
 
   const splitLocations = new Set(
     routeData.splitLocations
@@ -1090,7 +1100,8 @@ function renderMapNodes(target, visibleLayers, routeData) {
   const suggestionsByLocation = new Map(routeData.suggestions.map(suggestion => [suggestion.location.id, suggestion]));
 
   for (const location of MAP_LOCATIONS) {
-    const isRoute = routeOrdersByLocation.has(location.id);
+    const isEntry = isEntryVisible && location.id === FESTIVAL_ENTRY_ID;
+    const isRoute = routeLocationIds.has(location.id);
     const isSplit = splitLocations.has(location.id);
     const suggestion = suggestionsByLocation.get(location.id);
     const isSuggested = Boolean(suggestion);
@@ -1100,46 +1111,28 @@ function renderMapNodes(target, visibleLayers, routeData) {
 
     const meta = MAP_LAYER_META[location.category];
     const orderList = routeOrdersByLocation.get(location.id) || [];
-    const isStart = location.id === firstStopId;
-    const isEnd = location.id === lastStopId;
+    const order = orderList[0];
+    const isStart = location.id === firstRouteStopId;
+    const isEnd = location.id === lastStopId && location.id !== FESTIVAL_ENTRY_ID;
+    const isRepeat = repeatLocations.has(location.id);
     const node = document.createElement('div');
-    node.className = `map-node ${visibleLayers.has(location.category) && !isRoute ? 'is-layer' : ''} ${isRoute ? 'is-route' : ''} ${isSplit ? 'is-split' : ''} ${isSuggested ? 'is-suggested' : ''} ${isStart ? 'is-start' : ''} ${isEnd ? 'is-end' : ''}`;
+    node.className = `map-node ${visibleLayers.has(location.category) && !isRoute ? 'is-layer' : ''} ${isRoute ? 'is-route' : ''} ${isSplit ? 'is-split' : ''} ${isSuggested ? 'is-suggested' : ''} ${isEntry ? 'is-entry' : ''} ${isStart ? 'is-start' : ''} ${isEnd ? 'is-end' : ''} ${isRepeat ? 'is-repeat' : ''}`;
     node.style.left = `${location.x}%`;
     node.style.top = `${location.y}%`;
     node.style.setProperty('--node-color', meta.color);
     if (suggestion) {
       node.style.setProperty('--suggestion-color', suggestion.color);
     }
-    node.title = suggestion ? `${location.label} · ${suggestion.title}` : location.label;
 
-    const badge = orderList.join('·') || meta.icon;
-    const routeLabel = isStart && isEnd
-      ? `Inicio / final · ${location.shortLabel}`
-      : isStart
-        ? `Inicio · ${location.shortLabel}`
-        : isEnd
-          ? `Final · ${location.shortLabel}`
-          : isSuggested
-            ? `${suggestion.badgeLabel} · ${location.shortLabel}`
-            : location.shortLabel;
-    const label = isRoute || isSplit || isSuggested || visibleLayers.has(location.category)
-      ? `<span class="map-node-label">${routeLabel}</span>`
-      : '';
-    const flag = isStart && isEnd
-      ? '<span class="map-node-flag dual">Inicio / final</span>'
-      : isStart
-        ? '<span class="map-node-flag">Inicio</span>'
-        : isEnd
-          ? '<span class="map-node-flag end">Final</span>'
-          : isSuggested
-            ? `<span class="map-node-flag suggestion">${suggestion.badgeLabel}</span>`
-            : '';
+    const titleBits = [];
+    if (isEntry) titleBits.push('Inicio de ruta');
+    if (routeItemLocationIds.has(location.id)) titleBits.push(`Parada ${order}`);
+    if (isSuggested) titleBits.push(suggestion.title);
+    if (isSplit) titleBits.push('Punto de división');
+    node.title = [location.label, ...titleBits].join(' · ');
 
-    node.innerHTML = `
-      <span class="map-node-core">${badge}</span>
-      ${flag}
-      ${label}
-    `;
+    const badge = isEntry ? '' : (orderList.length > 0 ? orderList.join('·') : '');
+    node.innerHTML = `<span class="map-node-core">${badge}</span>`;
 
     target.appendChild(node);
   }
@@ -1272,39 +1265,19 @@ function scalePointToRect(point, rect) {
   };
 }
 
-function drawArrowGlyph(ctx, x, y, angle, color, label = '') {
+function drawArrowGlyph(ctx, x, y, angle, color) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate((angle * Math.PI) / 180);
-  ctx.fillStyle = 'rgba(13, 13, 18, 0.76)';
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.arc(0, 0, 18, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
   ctx.strokeStyle = color;
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 3.4;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.beginPath();
-  ctx.moveTo(-5, -4);
-  ctx.lineTo(6, 0);
-  ctx.lineTo(-5, 4);
+  ctx.moveTo(-7, -5);
+  ctx.lineTo(0, 0);
+  ctx.lineTo(-7, 5);
   ctx.stroke();
-  ctx.restore();
-
-  if (!label) return;
-
-  ctx.save();
-  ctx.font = "700 16px 'Outfit', sans-serif";
-  ctx.fillStyle = 'rgba(255,255,255,0.84)';
-  ctx.strokeStyle = 'rgba(13,13,18,0.88)';
-  ctx.lineWidth = 4;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  ctx.strokeText(label, x, y + 22);
-  ctx.fillText(label, x, y + 22);
   ctx.restore();
 }
 
@@ -1333,68 +1306,64 @@ function drawRouteOnCanvas(ctx, routeData, mode, rect) {
   ctx.stroke(path);
 
   ctx.strokeStyle = 'rgba(255,255,255,0.92)';
-  ctx.lineWidth = 2.5;
-  ctx.setLineDash([6, 18]);
+  ctx.lineWidth = 3;
+  ctx.setLineDash([8, 22]);
   ctx.lineDashOffset = -12;
   ctx.stroke(path);
   ctx.restore();
 
-  const stopIds = new Set(routeData.pathLocations.map(location => location.id));
-  routePoints
-    .filter((point, index) => index > 0 && index < routePoints.length - 1 && !stopIds.has(point.id))
-    .forEach(point => {
-      ctx.save();
-      ctx.fillStyle = mode === 'group' ? '#8cf7b1' : '#ffe08a';
-      ctx.globalAlpha = 0.82;
-      ctx.beginPath();
-      ctx.arc(point.x, point.y, 3.6, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    });
-
   routeData.segments.forEach((segment, index) => {
     const point = getPointAlongPolyline(segment.points.map(entry => scalePointToRect(entry, rect)), 0.55);
     if (!point) return;
-    drawArrowGlyph(ctx, point.x, point.y, point.angle, color, `${index + 1}→${index + 2}`);
+    drawArrowGlyph(ctx, point.x, point.y, point.angle, color);
   });
 
+  const orderedStops = routeData.pathLocations.filter((location, index) => !(index === 0 && location.id === FESTIVAL_ENTRY_ID));
+  const routeOrdersByLocation = new Map();
+  orderedStops.forEach((location, index) => {
+    const orders = routeOrdersByLocation.get(location.id) || [];
+    orders.push(index + 1);
+    routeOrdersByLocation.set(location.id, orders);
+  });
+  const lastStopId = orderedStops[orderedStops.length - 1]?.id || '';
+
   routeData.pathLocations
-    .map((location, index) => ({ location: scalePointToRect(location, rect), index }))
-    .forEach(({ location, index }) => {
-      const isStart = index === 0;
-      const isEnd = index === routeData.pathLocations.length - 1;
+    .map(location => scalePointToRect(location, rect))
+    .forEach((location, index) => {
+      const originalLocation = routeData.pathLocations[index];
+      const isEntry = index === 0 && originalLocation.id === FESTIVAL_ENTRY_ID;
+      const stopOrders = routeOrdersByLocation.get(originalLocation.id) || [];
+      const stopOrder = isEntry ? 0 : stopOrders[0];
+      const isStart = !isEntry && stopOrder === 1;
+      const isEnd = originalLocation.id === lastStopId && !isEntry;
       ctx.save();
-      ctx.fillStyle = color;
-      ctx.strokeStyle = 'rgba(255,255,255,0.96)';
-      ctx.lineWidth = 4;
+      ctx.fillStyle = isEntry ? 'rgba(13,13,18,0.86)' : color;
+      ctx.strokeStyle = isEntry ? 'rgba(255,209,102,0.96)' : 'rgba(255,255,255,0.96)';
+      ctx.lineWidth = isEntry ? 3 : 4;
       ctx.beginPath();
-      ctx.arc(location.x, location.y, 18, 0, Math.PI * 2);
+      ctx.arc(location.x, location.y, isEntry ? 12 : 18, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
-      ctx.fillStyle = '#101012';
-      ctx.font = "800 20px 'Outfit', sans-serif";
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(String(index + 1), location.x, location.y + 1);
+      if (!isEntry) {
+        ctx.fillStyle = '#101012';
+        ctx.font = "800 20px 'Outfit', sans-serif";
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(stopOrders.join('·'), location.x, location.y + 1);
+      }
       ctx.restore();
 
-      const label = isStart && isEnd
-        ? 'Inicio / final'
-        : isStart
-          ? 'Inicio'
-          : isEnd
-            ? 'Final'
-            : '';
+      const label = isEntry ? 'Ingreso al festival' : isStart ? 'Primera parada' : isEnd ? 'Última parada' : '';
       if (label) {
         drawPill(
           ctx,
-          location.x - 40,
+          location.x - (isEntry ? 78 : 56),
           location.y - 52,
           label,
           {
-            fillStyle: isEnd ? 'rgba(0,230,118,0.2)' : isStart && isEnd ? 'rgba(179,136,255,0.2)' : 'rgba(255,209,102,0.2)',
-            strokeStyle: isEnd ? 'rgba(0,230,118,0.28)' : isStart && isEnd ? 'rgba(179,136,255,0.3)' : 'rgba(255,209,102,0.3)',
-            color: isEnd ? '#8cf7b1' : isStart && isEnd ? '#d2b9ff' : '#ffd98a',
+            fillStyle: isEntry ? 'rgba(255,209,102,0.18)' : isEnd ? 'rgba(0,230,118,0.2)' : 'rgba(255,209,102,0.2)',
+            strokeStyle: isEntry ? 'rgba(255,209,102,0.26)' : isEnd ? 'rgba(0,230,118,0.28)' : 'rgba(255,209,102,0.3)',
+            color: isEntry ? '#ffd98a' : isEnd ? '#8cf7b1' : '#ffd98a',
             font: "800 16px 'Outfit', sans-serif",
             paddingX: 12,
             paddingY: 6,
@@ -1408,11 +1377,11 @@ function drawRouteOnCanvas(ctx, routeData, mode, rect) {
     .forEach(suggestion => {
       const point = scalePointToRect(suggestion.location, rect);
       ctx.save();
-      ctx.fillStyle = suggestion.color;
-      ctx.strokeStyle = 'rgba(255,255,255,0.9)';
-      ctx.lineWidth = 2;
+      ctx.fillStyle = 'rgba(13,13,18,0.76)';
+      ctx.strokeStyle = suggestion.color;
+      ctx.lineWidth = 2.5;
       ctx.beginPath();
-      ctx.arc(point.x, point.y, 10, 0, Math.PI * 2);
+      ctx.arc(point.x, point.y, 9, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
       ctx.restore();
@@ -1428,11 +1397,11 @@ function buildRouteTextExport(routeData, dayId, activeMode, shareUrl = '', selec
   const day = DAYS.find(entry => entry.id === dayId);
 
   if (routeData.unavailableMessage) {
-    return `🗺️ Ruta ${activeMode === 'group' ? 'del grupo' : 'personal'} — ${day?.label || dayId}\n\n${routeData.unavailableMessage}`;
+    return `Ruta ${activeMode === 'group' ? 'del grupo' : 'personal'} — ${day?.label || dayId}\n\n${routeData.unavailableMessage}`;
   }
 
   const lines = [
-    `🗺️ ${activeMode === 'group' ? 'Ruta del grupo' : 'Mi ruta'} — Estéreo Picnic 2026`,
+    `${activeMode === 'group' ? 'Ruta del grupo' : 'Mi ruta'} — Estéreo Picnic 2026`,
     `${day?.label || dayId}`,
     `Recorrido: ${routeData.pathLocations[0]?.shortLabel || 'Sin inicio'}${routeData.pathLocations.length > 1 ? ` → ${routeData.pathLocations[routeData.pathLocations.length - 1]?.shortLabel || 'Sin final'}` : ''}`,
     `Caminata estimada: ~${routeData.totalWalkMinutes} min`,
@@ -1446,15 +1415,23 @@ function buildRouteTextExport(routeData, dayId, activeMode, shareUrl = '', selec
   }
 
   lines.push('', 'Paradas');
+  lines.push(`0. Inicio · ${getLocation(FESTIVAL_ENTRY_ID)?.label || 'Ingreso al festival'}`);
+  const startsFromEntry = routeData.pathLocations[0]?.id === FESTIVAL_ENTRY_ID;
+  if (startsFromEntry && routeData.segments[0] && routeData.items[0]) {
+    lines.push(`   Ingreso → 1 · ~${routeData.segments[0].walkMinutes} min hasta ${routeData.segments[0].to.shortLabel}`);
+    lines.push('');
+  } else {
+    lines.push('');
+  }
 
   routeData.items.forEach((item, index) => {
     lines.push(`${index + 1}. ${item.startTime}–${item.endTime} · ${item.title}`);
     lines.push(`   ${item.meta}`);
     const nearby = [
-      item.nearbyFood ? `🍔 ${item.nearbyFood.shortLabel}` : '',
-      item.nearbyWater ? `💧 ${item.nearbyWater.shortLabel}` : '',
-      item.nearbyBathroom ? `🚻 ${item.nearbyBathroom.shortLabel}` : '',
-      item.nearbyService ? `◎ ${item.nearbyService.shortLabel}` : '',
+      item.nearbyFood ? `Comer: ${item.nearbyFood.shortLabel}` : '',
+      item.nearbyWater ? `Agua: ${item.nearbyWater.shortLabel}` : '',
+      item.nearbyBathroom ? `Baños: ${item.nearbyBathroom.shortLabel}` : '',
+      item.nearbyService ? `Extra: ${item.nearbyService.shortLabel}` : '',
     ].filter(Boolean);
     if (nearby.length > 0) {
       lines.push(`   Cerca: ${nearby.join(' · ')}`);
@@ -1462,7 +1439,7 @@ function buildRouteTextExport(routeData, dayId, activeMode, shareUrl = '', selec
     if (item.isConflict) {
       lines.push(`   Conflicto con ${formatConflictList(item.conflictWith, 3)}`);
     }
-    const segment = routeData.segments[index];
+    const segment = routeData.segments[startsFromEntry ? index + 1 : index];
     if (segment) {
       lines.push(`   ${index + 1} → ${index + 2} · ~${segment.walkMinutes} min hacia ${segment.to.shortLabel}`);
     }
@@ -1472,7 +1449,7 @@ function buildRouteTextExport(routeData, dayId, activeMode, shareUrl = '', selec
   if (routeData.suggestions?.length) {
     lines.push('Paradas útiles sugeridas');
     routeData.suggestions.forEach(suggestion => {
-      lines.push(`- ${suggestion.icon} ${suggestion.badgeLabel}: ${suggestion.location.shortLabel}`);
+      lines.push(`- ${suggestion.badgeLabel}: ${suggestion.location.shortLabel}`);
       lines.push(`  ${suggestion.title}. ${suggestion.reason}`);
     });
     lines.push('');
@@ -1493,7 +1470,8 @@ async function exportRouteImage(routeData, dayId, activeMode, shareUrl = '', sel
   const mapImage = await loadImage(MAP_IMAGE_SRC);
   const width = 1600;
   const mapHeight = 860;
-  const stopsHeight = Math.max(220, routeData.items.length * 120 + 120);
+  const startsFromEntry = routeData.pathLocations[0]?.id === FESTIVAL_ENTRY_ID;
+  const stopsHeight = Math.max(220, routeData.items.length * 120 + 120 + (startsFromEntry ? 90 : 0));
   const suggestionsHeight = Math.max(180, routeData.suggestions.length * 100 + 120);
   const footerHeight = activeMode === 'personal' ? 170 : 120;
   const height = 260 + mapHeight + stopsHeight + suggestionsHeight + footerHeight;
@@ -1576,6 +1554,22 @@ async function exportRouteImage(routeData, dayId, activeMode, shareUrl = '', sel
   ctx.restore();
   y += 26;
 
+  if (startsFromEntry && routeData.segments[0] && routeData.items[0]) {
+    fillRoundedRect(ctx, contentX, y, contentWidth, 74, 22, 'rgba(255,255,255,0.04)', 'rgba(255,209,102,0.14)', 1);
+    ctx.save();
+    ctx.fillStyle = '#ffd98a';
+    ctx.font = "800 16px 'Outfit', sans-serif";
+    ctx.fillText('INICIO', contentX + 18, y + 24);
+    ctx.fillStyle = '#F8F3E8';
+    ctx.font = "800 24px 'Outfit', sans-serif";
+    ctx.fillText('Ingreso al festival', contentX + 18, y + 50);
+    ctx.fillStyle = 'rgba(248,243,232,0.68)';
+    ctx.font = "500 16px 'Outfit', sans-serif";
+    ctx.fillText(`~${routeData.segments[0].walkMinutes} min hasta ${routeData.segments[0].to.shortLabel}`, contentX + 300, y + 50);
+    ctx.restore();
+    y += 92;
+  }
+
   routeData.items.forEach((item, index) => {
     const cardHeight = 106;
     fillRoundedRect(ctx, contentX, y, contentWidth, cardHeight, 28, 'rgba(255,255,255,0.04)', item.isConflict ? 'rgba(255,77,77,0.24)' : 'rgba(255,255,255,0.08)', 1.2);
@@ -1611,17 +1605,17 @@ async function exportRouteImage(routeData, dayId, activeMode, shareUrl = '', sel
     ctx.font = "500 18px 'Outfit', sans-serif";
     ctx.fillText(item.meta, textX, y + 84);
     const nearbyText = [
-      item.nearbyFood ? `🍔 ${item.nearbyFood.shortLabel}` : '',
-      item.nearbyWater ? `💧 ${item.nearbyWater.shortLabel}` : '',
-      item.nearbyBathroom ? `🚻 ${item.nearbyBathroom.shortLabel}` : '',
-      item.nearbyService ? `◎ ${item.nearbyService.shortLabel}` : '',
+      item.nearbyFood ? `Comer: ${item.nearbyFood.shortLabel}` : '',
+      item.nearbyWater ? `Agua: ${item.nearbyWater.shortLabel}` : '',
+      item.nearbyBathroom ? `Baños: ${item.nearbyBathroom.shortLabel}` : '',
+      item.nearbyService ? `Extra: ${item.nearbyService.shortLabel}` : '',
     ].filter(Boolean).join(' · ');
     ctx.fillStyle = 'rgba(210, 203, 235, 0.82)';
     ctx.font = "500 16px 'Outfit', sans-serif";
     drawWrappedText(ctx, nearbyText, textX, y + 106, contentWidth - 120, 20, 2);
     ctx.restore();
 
-    const segment = routeData.segments[index];
+    const segment = routeData.segments[startsFromEntry ? index + 1 : index];
     if (segment) {
       ctx.save();
       ctx.fillStyle = 'rgba(210, 203, 235, 0.65)';
@@ -1654,11 +1648,11 @@ async function exportRouteImage(routeData, dayId, activeMode, shareUrl = '', sel
       fillRoundedRect(ctx, contentX, y, contentWidth, 90, 24, 'rgba(255,255,255,0.04)', 'rgba(255,255,255,0.08)', 1);
       fillRoundedRect(ctx, contentX + 16, y + 15, 54, 54, 18, `${suggestion.color}22`, `${suggestion.color}55`, 1);
       ctx.save();
-      ctx.font = "700 28px 'Outfit', sans-serif";
+      ctx.font = "800 16px 'Outfit', sans-serif";
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = suggestion.color;
-      ctx.fillText(suggestion.icon, contentX + 43, y + 43);
+      ctx.fillText(suggestion.badgeLabel.toUpperCase(), contentX + 43, y + 43);
       ctx.restore();
 
       ctx.save();
@@ -1722,11 +1716,10 @@ export function renderMapPanel({
   const poiLayer = document.getElementById('festival-map-pois');
   const layerToggles = document.getElementById('map-layer-toggles');
   const modeToggle = document.getElementById('map-mode-toggle');
-  const legendGrid = document.getElementById('map-legend-grid');
   const exportImageButton = document.getElementById('btn-export-map-image');
   const exportTextButton = document.getElementById('btn-export-map-text');
 
-  if (!routeCaption || !routeSummary || !routeSuggestions || !routeSvg || !poiLayer || !layerToggles || !modeToggle || !legendGrid || !exportImageButton || !exportTextButton) {
+  if (!routeCaption || !routeSummary || !routeSuggestions || !routeSvg || !poiLayer || !layerToggles || !modeToggle || !exportImageButton || !exportTextButton) {
     return;
   }
 
@@ -1739,7 +1732,6 @@ export function renderMapPanel({
 
   renderModeButtons(modeToggle, activeMode, hasGroupRoute, onSetMode);
   renderLayerToggles(layerToggles, visibleLayers, onToggleLayer);
-  renderLegendGrid(legendGrid);
   renderRouteSummary(routeSummary, routeData, activeMode);
   renderRouteSuggestions(routeSuggestions, routeData, activeMode);
   renderMapNodes(poiLayer, visibleLayers, routeData);
