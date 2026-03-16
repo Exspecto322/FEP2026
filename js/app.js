@@ -84,6 +84,10 @@ function switchDay(dayId) {
   const dayInfo = DAYS.find(d => d.id === dayId);
   document.body.style.setProperty('--day-gradient', dayInfo.themeGradient);
 
+  if (currentView === 'clubes') {
+    setView('schedule');
+  }
+
   renderCurrentDay();
 }
 
@@ -95,7 +99,14 @@ function setupNavigation() {
   document.getElementById('nav-my-schedule')?.addEventListener('click', () => setView('my-schedule'));
   document.getElementById('nav-merge')?.addEventListener('click', () => setView('merge'));
   document.getElementById('nav-clubes')?.addEventListener('click', () => setView('clubes'));
-  document.getElementById('btn-clubes-desktop')?.addEventListener('click', () => setView('clubes'));
+  
+  document.getElementById('btn-clubes-desktop')?.addEventListener('click', () => {
+    if (currentView === 'clubes') {
+      setView('schedule');
+    } else {
+      setView('clubes');
+    }
+  });
 }
 
 function setView(view) {
@@ -105,6 +116,19 @@ function setView(view) {
   
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(`nav-${view}`)?.classList.add('active');
+
+  const desktopBtn = document.getElementById('btn-clubes-desktop');
+  if (desktopBtn) {
+    if (view === 'clubes') {
+      desktopBtn.textContent = '⬅ Volver a la Grilla';
+      desktopBtn.classList.add('btn-primary');
+      desktopBtn.classList.remove('btn-secondary');
+    } else {
+      desktopBtn.textContent = '🎉 Clubes';
+      desktopBtn.classList.add('btn-secondary');
+      desktopBtn.classList.remove('btn-primary');
+    }
+  }
 
   if (view === 'my-schedule') {
     updateMySchedule();

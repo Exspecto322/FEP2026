@@ -180,11 +180,26 @@ const SUNDAY = [
 // CLUBES
 // ============================================================
 const CLUBES = [
+  // Friday
   { id: makeId(), name: 'Pan-Pot', day: 'friday', stage: 'club', startTime: '23:00', endTime: '04:00', genres: ['techno', 'dj'], tier: 'top', isClub: true },
   { id: makeId(), name: 'Nicola Cruz', day: 'friday', stage: 'club', startTime: '01:00', endTime: '05:00', genres: ['electronic', 'dj'], tier: 'mid', isClub: true },
+  { id: makeId(), name: 'Vitalic (Live)', day: 'friday', stage: 'club', startTime: '22:00', endTime: '02:00', genres: ['electronic', 'techno'], tier: 'mid', isClub: true },
+  { id: makeId(), name: 'Mall Grab', day: 'friday', stage: 'club', startTime: '00:00', endTime: '03:00', genres: ['house', 'electronic'], tier: 'emerging', isClub: true },
+  { id: makeId(), name: 'Skin On Skin', day: 'friday', stage: 'club', startTime: '03:00', endTime: '06:00', genres: ['techno', 'house'], tier: 'emerging', isClub: true },
+
+  // Saturday
   { id: makeId(), name: 'Solomun', day: 'saturday', stage: 'club', startTime: '00:00', endTime: '06:00', genres: ['house', 'electronic'], tier: 'top', isClub: true },
   { id: makeId(), name: 'Kittin', day: 'saturday', stage: 'club', startTime: '02:00', endTime: '06:00', genres: ['electronic', 'techno'], tier: 'mid', isClub: true },
+  { id: makeId(), name: 'Folamour', day: 'saturday', stage: 'club', startTime: '22:00', endTime: '02:00', genres: ['house', 'disco'], tier: 'mid', isClub: true },
+  { id: makeId(), name: 'DJ Tennis', day: 'saturday', stage: 'club', startTime: '01:00', endTime: '04:00', genres: ['electronic', 'dj'], tier: 'mid', isClub: true },
+  { id: makeId(), name: 'Carlita', day: 'saturday', stage: 'club', startTime: '04:00', endTime: '07:00', genres: ['house', 'electronic'], tier: 'emerging', isClub: true },
+
+  // Sunday
   { id: makeId(), name: 'Festival Closing Party', day: 'sunday', stage: 'club', startTime: '23:00', endTime: '05:00', genres: ['house', 'electronic'], tier: 'top', isClub: true },
+  { id: makeId(), name: 'Amelie Lens', day: 'sunday', stage: 'club', startTime: '00:00', endTime: '03:00', genres: ['techno', 'dj'], tier: 'top', isClub: true },
+  { id: makeId(), name: 'VTSS', day: 'sunday', stage: 'club', startTime: '03:00', endTime: '06:00', genres: ['techno', 'electronic'], tier: 'mid', isClub: true },
+  { id: makeId(), name: 'Bicep (DJ Set)', day: 'sunday', stage: 'club', startTime: '23:00', endTime: '02:00', genres: ['electronic', 'house'], tier: 'top', isClub: true },
+  { id: makeId(), name: 'Partiboi69', day: 'sunday', stage: 'club', startTime: '02:00', endTime: '05:00', genres: ['electronic'], tier: 'mid', isClub: true }
 ];
 
 export const ARTISTS = [...FRIDAY, ...SATURDAY, ...SUNDAY, ...CLUBES];
