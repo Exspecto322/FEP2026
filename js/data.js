@@ -10,6 +10,7 @@ export const STAGES = [
   { id: 'paramo', name: 'Páramo', sponsor: '', color: '#FF6D00' },
   { id: 'lago', name: 'Lago', sponsor: '', color: '#2979FF' },
   { id: 'fuerza-bruta', name: 'Fuerza Bruta', sponsor: 'Falabella', color: '#E040FB' },
+  { id: 'club', name: 'Clubes', sponsor: '', color: '#E91E63' },
 ];
 
 export const DAYS = [
@@ -175,7 +176,18 @@ const SUNDAY = [
   { id: makeId(), name: 'Fuerza Bruta 21:15', day: 'sunday', stage: 'fuerza-bruta', startTime: '21:15', endTime: '21:45', genres: ['performance'], tier: 'emerging' },
 ];
 
-export const ARTISTS = [...FRIDAY, ...SATURDAY, ...SUNDAY];
+// ============================================================
+// CLUBES
+// ============================================================
+const CLUBES = [
+  { id: makeId(), name: 'Pan-Pot', day: 'friday', stage: 'club', startTime: '23:00', endTime: '04:00', genres: ['techno', 'dj'], tier: 'top', isClub: true },
+  { id: makeId(), name: 'Nicola Cruz', day: 'friday', stage: 'club', startTime: '01:00', endTime: '05:00', genres: ['electronic', 'dj'], tier: 'mid', isClub: true },
+  { id: makeId(), name: 'Solomun', day: 'saturday', stage: 'club', startTime: '00:00', endTime: '06:00', genres: ['house', 'electronic'], tier: 'top', isClub: true },
+  { id: makeId(), name: 'Kittin', day: 'saturday', stage: 'club', startTime: '02:00', endTime: '06:00', genres: ['electronic', 'techno'], tier: 'mid', isClub: true },
+  { id: makeId(), name: 'Festival Closing Party', day: 'sunday', stage: 'club', startTime: '23:00', endTime: '05:00', genres: ['house', 'electronic'], tier: 'top', isClub: true },
+];
+
+export const ARTISTS = [...FRIDAY, ...SATURDAY, ...SUNDAY, ...CLUBES];
 export const TOTAL_ARTISTS = ARTISTS.length;
 
 // Helper: get artists for a specific day
@@ -212,4 +224,9 @@ export function timesOverlap(start1, end1, start2, end2) {
 // Helper: get stage info by id
 export function getStage(stageId) {
   return STAGES.find(s => s.id === stageId);
+}
+
+// Helper: get all clubes
+export function getClubes() {
+  return ARTISTS.filter(a => a.isClub);
 }

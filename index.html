@@ -24,6 +24,8 @@
       <span class="header-year">2026</span>
     </div>
     <div class="header-actions">
+      <!-- Clubes Toggle (desktop) -->
+      <button class="btn btn-secondary btn-sm" id="btn-clubes-desktop" style="margin-right: 8px;">🎉 Clubes</button>
       <!-- Search (desktop) -->
       <div class="search-wrapper">
         <span class="search-icon">🔍</span>
@@ -122,6 +124,18 @@
     </div>
   </div>
 
+  <!-- Clubes View -->
+  <div class="view-panel" id="panel-clubes">
+    <div class="panel-clubes">
+      <h2 style="font-family: 'Outfit', sans-serif; font-weight: 800; margin-bottom: 8px;">🎉 Clubes (Opcional)</h2>
+      <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 16px;">
+        Eventos oficiales en diferentes ubicaciones. Añádelos a tu agenda para no perderte nada.
+      </p>
+      
+      <div id="clubes-list-container"></div>
+    </div>
+  </div>
+
   <!-- Merge View -->
   <div class="view-panel" id="panel-merge">
     <div class="panel-merge">
@@ -153,6 +167,10 @@
       <button class="nav-btn" id="nav-merge">
         <span class="nav-icon">🤝</span>
         <span>Combinar</span>
+      </button>
+      <button class="nav-btn" id="nav-clubes">
+        <span class="nav-icon">🎉</span>
+        <span>Clubes</span>
       </button>
     </div>
   </nav>

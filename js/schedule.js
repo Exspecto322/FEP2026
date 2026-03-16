@@ -18,7 +18,7 @@ export function renderScheduleGrid(dayId, selectedIds, onToggle) {
   container.className = 'schedule-grid';
 
   const dayInfo = DAYS.find(d => d.id === dayId);
-  const artists = getArtistsByDay(dayId);
+  const artists = getArtistsByDay(dayId).filter(a => !a.isClub);
 
   // Create time axis
   const timeAxis = document.createElement('div');
@@ -38,6 +38,8 @@ export function renderScheduleGrid(dayId, selectedIds, onToggle) {
   stagesContainer.className = 'stages-container';
 
   for (const stage of STAGES) {
+    if (stage.id === 'club') continue;
+
     const col = document.createElement('div');
     col.className = 'stage-column';
     col.dataset.stage = stage.id;
@@ -210,7 +212,7 @@ export function renderScheduleList(dayId, selectedIds, onToggle) {
   container.className = 'schedule-list-view';
 
   const artists = getArtistsByDay(dayId)
-    .filter(a => !a.genres.includes('performance'))
+    .filter(a => !a.genres.includes('performance') && !a.isClub)
     .sort((a, b) => {
       const ta = timeToMinutes(a.startTime);
       const tb = timeToMinutes(b.startTime);

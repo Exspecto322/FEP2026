@@ -2,7 +2,7 @@
 // FEP2026 — Main App Controller
 // ============================================================
 
-import { ARTISTS, DAYS, STAGES, getArtistById, getArtistsByDay, timesOverlap } from './data.js';
+import { ARTISTS, DAYS, STAGES, getArtistById, getArtistsByDay, getClubes, timesOverlap } from './data.js';
 import { renderScheduleGrid, renderScheduleList, updateSelectionVisuals, getConflicts } from './schedule.js';
 import { encodeSeed, decodeSeed, saveToHash, loadFromHash, saveToStorage, loadFromStorage, getShareableURL, exportAsText } from './seed.js';
 import { parseMergeInputs, mergeSchedules, generateRoutePlan, renderMergedSchedule } from './merge.js';
@@ -15,7 +15,7 @@ window._fepData = { ARTISTS };
 
 let selectedIds = new Set();
 let currentDay = 'friday';
-let currentView = 'schedule'; // 'schedule' | 'my-schedule' | 'merge'
+let currentView = 'schedule'; // 'schedule' | 'my-schedule' | 'merge' | 'clubes'
 let currentLayout = 'grid'; // 'grid' | 'list'
 
 // ============================================================
@@ -41,6 +41,7 @@ function init() {
   updateMySchedule();
   updateRecommendations();
   updateCounter();
+  renderClubesPanel(); // Initial render for clubes panel
 
   // Listen for hash changes (e.g., navigating back)
   window.addEventListener('hashchange', () => {
@@ -93,6 +94,8 @@ function setupNavigation() {
   document.getElementById('nav-schedule')?.addEventListener('click', () => setView('schedule'));
   document.getElementById('nav-my-schedule')?.addEventListener('click', () => setView('my-schedule'));
   document.getElementById('nav-merge')?.addEventListener('click', () => setView('merge'));
+  document.getElementById('nav-clubes')?.addEventListener('click', () => setView('clubes'));
+  document.getElementById('btn-clubes-desktop')?.addEventListener('click', () => setView('clubes'));
 }
 
 function setView(view) {
@@ -151,6 +154,7 @@ function toggleArtist(artistId) {
   updateMySchedule();
   updateRecommendations();
   updateCounter();
+  renderClubesPanel(); // Re-render to show checkbox states
 }
 
 // ============================================================
@@ -214,7 +218,7 @@ function updateMySchedule() {
         card.innerHTML = `
           <div class="my-artist-info">
             <div class="my-artist-time">${artist.startTime} – ${artist.endTime}</div>
-            <div class="my-artist-name">${artist.name}</div>
+            <div class="my-artist-name">${artist.name} ${artist.isClub ? '<span class="club-tag-inline">🎉 CLUB</span>' : ''}</div>
             <div class="my-artist-stage" style="color: ${stage.color}">${stage.name}</div>
             ${conflictIds.has(artist.id) ? '<div class="conflict-badge">⚠️ Conflicto de horario</div>' : ''}
           </div>
@@ -227,6 +231,65 @@ function updateMySchedule() {
 
       panel.appendChild(daySection);
     }
+  }
+}
+
+// ============================================================
+// Clubes Panel
+// ============================================================
+function renderClubesPanel() {
+  const container = document.getElementById('clubes-list-container');
+  if (!container) return;
+
+  container.innerHTML = '';
+  const dayLabels = { friday: 'Viernes 20', saturday: 'Sábado 21', sunday: 'Domingo 22' };
+  const clubes = getClubes();
+
+  // Group by day
+  for (const dayId of ['friday', 'saturday', 'sunday']) {
+    const dayClubes = clubes.filter(c => c.day === dayId);
+    if (dayClubes.length === 0) continue;
+
+    const section = document.createElement('div');
+    section.className = 'clubes-day-section';
+    section.style.marginBottom = '24px';
+    section.innerHTML = `<h3 style="font-family: 'Outfit'; font-size: 1.1rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px; margin-bottom: 12px; color: var(--text-secondary);">${dayLabels[dayId]}</h3>`;
+    
+    // Group inside days
+    const list = document.createElement('div');
+    list.className = 'schedule-list-view';
+
+    for (const club of dayClubes) {
+      const isSelected = selectedIds.has(club.id);
+      let hasConflict = false;
+      if (isSelected) {
+        hasConflict = getConflicts(selectedIds, ARTISTS).some(pair => pair[0].id === club.id || pair[1].id === club.id);
+      }
+
+      const row = document.createElement('button');
+      row.className = `list-row tier-mid ${isSelected ? 'selected' : ''} ${hasConflict ? 'conflict' : ''}`;
+      row.dataset.artistId = club.id;
+      row.style.setProperty('--stage-color', '#E91E63');
+      
+      row.innerHTML = `
+        <span class="list-check">${isSelected ? '✓' : ''}</span>
+        <span class="list-time">${club.startTime} – ${club.endTime}</span>
+        <span class="list-name">${club.name} <span class="club-tag-inline">🎉 CLUB</span></span>
+        <span class="list-stage" style="color: #E91E63">
+          <span class="list-stage-dot" style="background: #E91E63"></span>
+          Off-site
+        </span>
+        <span class="list-genres">${club.genres.slice(0, 3).join(' · ')}</span>
+      `;
+      
+      row.addEventListener('click', (e) => {
+        e.preventDefault();
+        toggleArtist(club.id);
+      });
+      list.appendChild(row);
+    }
+    section.appendChild(list);
+    container.appendChild(section);
   }
 }
 
