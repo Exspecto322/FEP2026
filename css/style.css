@@ -217,6 +217,7 @@ input, textarea {
 }
 
 .search-item {
+  position: relative;
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -266,6 +267,10 @@ input, textarea {
   justify-content: center;
   padding: 16px 20px 8px;
   gap: 12px;
+}
+
+.day-tabs-wrapper.is-hidden {
+  display: none;
 }
 
 .day-tabs-inner {
@@ -1033,7 +1038,7 @@ input, textarea {
 }
 
 .panel-clubes {
-  max-width: 900px;
+  max-width: 1180px;
   margin: 0 auto;
   padding: 24px 20px;
 }
@@ -1050,6 +1055,190 @@ input, textarea {
   margin-left: 6px;
   vertical-align: middle;
   border: 1px solid rgba(233, 30, 99, 0.3);
+  letter-spacing: 0.05em;
+}
+
+.special-tag-inline {
+  display: inline-block;
+  font-size: 0.55rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 200, 87, 0.16);
+  color: #FFC857;
+  margin-left: 6px;
+  vertical-align: middle;
+  border: 1px solid rgba(255, 200, 87, 0.34);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.clubes-day-section {
+  margin-bottom: 28px;
+}
+
+.clubes-day-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  padding-bottom: 8px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.clubes-venue-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.clubes-venue-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+
+.clubes-venue-head {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 14px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0));
+}
+
+.clubes-series-badge {
+  align-self: flex-start;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.clubes-venue-name {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.clubes-entry-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.clubes-entry {
+  display: grid;
+  grid-template-columns: 22px 74px minmax(0, 1fr);
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  text-align: left;
+  border-top: 1px solid var(--border-subtle);
+  transition: background 0.2s var(--ease-out), border-color 0.2s var(--ease-out);
+}
+
+.clubes-entry:first-child {
+  border-top: none;
+}
+
+.clubes-entry:hover {
+  background: var(--bg-card-hover);
+}
+
+.clubes-entry.special {
+  background: rgba(255, 200, 87, 0.04);
+}
+
+.clubes-entry.selected {
+  background: rgba(124, 77, 255, 0.1);
+}
+
+.clubes-entry.selected.conflict {
+  background: rgba(255, 77, 77, 0.08);
+}
+
+.clubes-entry-check {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid var(--border-accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: transparent;
+  transition: all 0.2s var(--ease-spring);
+}
+
+.clubes-entry.selected .clubes-entry-check {
+  background: var(--selected);
+  border-color: var(--selected);
+  color: white;
+}
+
+.clubes-entry.selected.conflict .clubes-entry-check {
+  background: var(--conflict);
+  border-color: var(--conflict);
+}
+
+.clubes-entry-time {
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  align-self: center;
+}
+
+.clubes-entry-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.clubes-entry-name-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.clubes-entry-name {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+.special-tag-inline-card {
+  margin-left: 0;
+  flex-shrink: 0;
+}
+
+.clubes-entry-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.clubes-entry-meta {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.clubes-entry-conflict {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--conflict);
+  text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
@@ -1139,6 +1328,10 @@ input, textarea {
 
   .toast {
     bottom: calc(var(--nav-height) + 16px);
+  }
+
+  .clubes-venue-grid {
+    grid-template-columns: 1fr;
   }
 }
 

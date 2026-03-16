@@ -2,8 +2,13 @@
 // FEP2026 — Schedule Merging & Route Planning
 // ============================================================
 
-import { ARTISTS, DAYS, getStage, timeToMinutes, timesOverlap } from './data.js';
+import { ARTISTS, DAYS, getArtistDisplayName, getArtistMetaLabel, getStage, timeToMinutes, timesOverlap } from './data.js';
 import { decodeSeed } from './seed.js';
+
+function getRouteLocationKey(artist) {
+  if (!artist?.isClub) return artist.stage;
+  return [artist.stage, artist.clubSeries, artist.clubVenue].filter(Boolean).join(':');
+}
 
 /**
  * Parse multiple seed inputs (seeds or full URLs)
@@ -114,14 +119,14 @@ export function generateRoutePlan(schedules, dayId) {
 
       if (activeArtists.length > 0) {
         const artist = activeArtists[0]; // Primary artist at this time
-        const stage = getStage(artist.stage);
+        const locationKey = getRouteLocationKey(artist);
         snapshot.people.push({
           name: schedule.name,
-          artist: artist.name,
-          stage: stage.name,
-          stageId: artist.stage,
+          artist: getArtistDisplayName(artist),
+          stage: getArtistMetaLabel(artist),
+          stageId: locationKey,
         });
-        snapshot.stages.add(artist.stage);
+        snapshot.stages.add(locationKey);
       }
     }
 
@@ -213,8 +218,8 @@ function createMergeCard(item, colors) {
 
   card.innerHTML = `
     <div class="merge-card-time">${item.artist.startTime} – ${item.artist.endTime}</div>
-    <div class="merge-card-name">${item.artist.name}</div>
-    <div class="merge-card-stage" style="color: ${stage.color}">${stage.name}</div>
+    <div class="merge-card-name">${getArtistDisplayName(item.artist)}</div>
+    <div class="merge-card-stage" style="color: ${stage?.color || 'var(--text-secondary)'}">${getArtistMetaLabel(item.artist)}</div>
     <div class="merge-card-owners">
       ${item.owners.map((o, i) => `<span class="owner-dot" style="background: ${colors[i % colors.length]}" title="${o}"></span>`).join('')}
     </div>

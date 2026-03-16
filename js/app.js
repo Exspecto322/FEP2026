@@ -2,7 +2,7 @@
 // FEP2026 — Main App Controller
 // ============================================================
 
-import { ARTISTS, DAYS, STAGES, getArtistById, getArtistsByDay, getClubes, timesOverlap } from './data.js';
+import { ARTISTS, DAYS, STAGES, getClubes, getClubSeries, getArtistDisplayName, getArtistMetaLabel, timeToMinutes } from './data.js';
 import { renderScheduleGrid, renderScheduleList, updateSelectionVisuals, getConflicts } from './schedule.js';
 import { encodeSeed, decodeSeed, saveToHash, loadFromHash, saveToStorage, loadFromStorage, getShareableURL, exportAsText } from './seed.js';
 import { parseMergeInputs, mergeSchedules, generateRoutePlan, renderMergedSchedule } from './merge.js';
@@ -30,6 +30,10 @@ function init() {
   const hashSelection = loadFromHash();
   const storageSelection = loadFromStorage();
   selectedIds = hashSelection.size > 0 ? hashSelection : storageSelection;
+  const initialDay = DAYS.find(day => day.id === currentDay);
+  if (initialDay) {
+    document.body.style.setProperty('--day-gradient', initialDay.themeGradient);
+  }
 
   setupDayTabs();
   setupNavigation();
@@ -46,13 +50,12 @@ function init() {
   // Listen for hash changes (e.g., navigating back)
   window.addEventListener('hashchange', () => {
     const newSelection = loadFromHash();
-    if (newSelection.size > 0) {
-      selectedIds = newSelection;
-      renderCurrentDay();
-      updateMySchedule();
-      updateRecommendations();
-      updateCounter();
-    }
+    selectedIds = newSelection;
+    renderCurrentDay();
+    updateMySchedule();
+    updateRecommendations();
+    updateCounter();
+    renderClubesPanel();
   });
 }
 
@@ -84,10 +87,6 @@ function switchDay(dayId) {
   const dayInfo = DAYS.find(d => d.id === dayId);
   document.body.style.setProperty('--day-gradient', dayInfo.themeGradient);
 
-  if (currentView === 'clubes') {
-    setView('schedule');
-  }
-
   renderCurrentDay();
 }
 
@@ -117,6 +116,8 @@ function setView(view) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(`nav-${view}`)?.classList.add('active');
 
+  document.querySelector('.day-tabs-wrapper')?.classList.toggle('is-hidden', view !== 'schedule');
+
   const desktopBtn = document.getElementById('btn-clubes-desktop');
   if (desktopBtn) {
     if (view === 'clubes') {
@@ -128,6 +129,10 @@ function setView(view) {
       desktopBtn.classList.add('btn-secondary');
       desktopBtn.classList.remove('btn-primary');
     }
+  }
+
+  if (view === 'clubes') {
+    renderClubesPanel();
   }
 
   if (view === 'my-schedule') {
@@ -236,14 +241,15 @@ function updateMySchedule() {
 
       for (const artist of dayArtists) {
         const stage = STAGES.find(s => s.id === artist.stage);
+        const displayName = getArtistDisplayName(artist);
         const card = document.createElement('div');
         card.className = `my-artist-card ${conflictIds.has(artist.id) ? 'conflict' : ''}`;
 
         card.innerHTML = `
           <div class="my-artist-info">
             <div class="my-artist-time">${artist.startTime} – ${artist.endTime}</div>
-            <div class="my-artist-name">${artist.name} ${artist.isClub ? '<span class="club-tag-inline">🎉 CLUB</span>' : ''}</div>
-            <div class="my-artist-stage" style="color: ${stage.color}">${stage.name}</div>
+            <div class="my-artist-name">${displayName} ${artist.isClub ? '<span class="club-tag-inline">🎉 CLUBES</span>' : ''}${artist.isSpecial ? ` <span class="special-tag-inline">${artist.specialLabel || 'Especial'}</span>` : ''}</div>
+            <div class="my-artist-stage" style="color: ${stage.color}">${artist.isClub ? getArtistMetaLabel(artist) : stage.name}</div>
             ${conflictIds.has(artist.id) ? '<div class="conflict-badge">⚠️ Conflicto de horario</div>' : ''}
           </div>
           <button class="my-artist-remove" title="Quitar">✕</button>
@@ -268,51 +274,103 @@ function renderClubesPanel() {
   container.innerHTML = '';
   const dayLabels = { friday: 'Viernes 20', saturday: 'Sábado 21', sunday: 'Domingo 22' };
   const clubes = getClubes();
+  const conflictIds = new Set();
+  for (const [a, b] of getConflicts(selectedIds, ARTISTS)) {
+    conflictIds.add(a.id);
+    conflictIds.add(b.id);
+  }
 
   // Group by day
   for (const dayId of ['friday', 'saturday', 'sunday']) {
-    const dayClubes = clubes.filter(c => c.day === dayId);
+    const dayClubes = clubes
+      .filter(c => c.day === dayId)
+      .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
     if (dayClubes.length === 0) continue;
 
     const section = document.createElement('div');
     section.className = 'clubes-day-section';
-    section.style.marginBottom = '24px';
-    section.innerHTML = `<h3 style="font-family: 'Outfit'; font-size: 1.1rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px; margin-bottom: 12px; color: var(--text-secondary);">${dayLabels[dayId]}</h3>`;
-    
-    // Group inside days
-    const list = document.createElement('div');
-    list.className = 'schedule-list-view';
+    section.innerHTML = `<h3 class="clubes-day-title">${dayLabels[dayId]}</h3>`;
 
+    const groups = new Map();
     for (const club of dayClubes) {
-      const isSelected = selectedIds.has(club.id);
-      let hasConflict = false;
-      if (isSelected) {
-        hasConflict = getConflicts(selectedIds, ARTISTS).some(pair => pair[0].id === club.id || pair[1].id === club.id);
+      const key = `${club.clubSeries || 'club'}::${club.clubVenue || 'sin-sede'}`;
+      if (!groups.has(key)) {
+        groups.set(key, {
+          seriesId: club.clubSeries,
+          venue: club.clubVenue,
+          items: [],
+        });
+      }
+      groups.get(key).items.push(club);
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'clubes-venue-grid';
+    const seriesOrder = ['aora', 'rompe', 'coke'];
+
+    for (const group of Array.from(groups.values()).sort((a, b) => {
+      const aIndex = seriesOrder.indexOf(a.seriesId);
+      const bIndex = seriesOrder.indexOf(b.seriesId);
+      const seriesDelta = (aIndex === -1 ? 99 : aIndex) - (bIndex === -1 ? 99 : bIndex);
+      if (seriesDelta !== 0) return seriesDelta;
+      return (a.venue || '').localeCompare(b.venue || '');
+    })) {
+      const series = getClubSeries(group.seriesId);
+      const seriesColor = series?.color || '#E91E63';
+      const card = document.createElement('section');
+      card.className = 'clubes-venue-card';
+
+      card.innerHTML = `
+        <div class="clubes-venue-head">
+          <span class="clubes-series-badge" style="background: ${seriesColor}22; border-color: ${seriesColor}55; color: ${seriesColor};">${series?.label || 'Clubes'}</span>
+          ${group.venue ? `<h4 class="clubes-venue-name">${group.venue}</h4>` : ''}
+        </div>
+      `;
+
+      const list = document.createElement('div');
+      list.className = 'clubes-entry-list';
+
+      for (const club of group.items) {
+        const isSelected = selectedIds.has(club.id);
+        const hasConflict = isSelected && conflictIds.has(club.id);
+        const displayName = getArtistDisplayName(club);
+        const detailBits = [];
+        if (club.isSpecial && club.specialNote) {
+          detailBits.push(`<span class="clubes-entry-meta">${club.specialNote}</span>`);
+        }
+        if (hasConflict) {
+          detailBits.push('<span class="clubes-entry-conflict">Conflicto</span>');
+        }
+
+        const row = document.createElement('button');
+        row.className = `clubes-entry ${club.isSpecial ? 'special' : ''} ${isSelected ? 'selected' : ''} ${hasConflict ? 'conflict' : ''}`;
+        row.dataset.artistId = club.id;
+
+        row.innerHTML = `
+          <span class="clubes-entry-check">${isSelected ? '✓' : ''}</span>
+          <span class="clubes-entry-time">${club.startTime} – ${club.endTime}</span>
+          <span class="clubes-entry-body">
+            <span class="clubes-entry-name-row">
+              <span class="clubes-entry-name">${displayName}</span>
+              ${club.isSpecial ? `<span class="special-tag-inline special-tag-inline-card">${club.specialLabel || 'Especial'}</span>` : ''}
+            </span>
+            ${detailBits.length > 0 ? `<span class="clubes-entry-meta-row">${detailBits.join('')}</span>` : ''}
+          </span>
+        `;
+
+        row.addEventListener('click', (e) => {
+          e.preventDefault();
+          toggleArtist(club.id);
+        });
+
+        list.appendChild(row);
       }
 
-      const row = document.createElement('button');
-      row.className = `list-row tier-mid ${isSelected ? 'selected' : ''} ${hasConflict ? 'conflict' : ''}`;
-      row.dataset.artistId = club.id;
-      row.style.setProperty('--stage-color', '#E91E63');
-      
-      row.innerHTML = `
-        <span class="list-check">${isSelected ? '✓' : ''}</span>
-        <span class="list-time">${club.startTime} – ${club.endTime}</span>
-        <span class="list-name">${club.name} <span class="club-tag-inline">🎉 CLUB</span></span>
-        <span class="list-stage" style="color: #E91E63">
-          <span class="list-stage-dot" style="background: #E91E63"></span>
-          Off-site
-        </span>
-        <span class="list-genres">${club.genres.slice(0, 3).join(' · ')}</span>
-      `;
-      
-      row.addEventListener('click', (e) => {
-        e.preventDefault();
-        toggleArtist(club.id);
-      });
-      list.appendChild(row);
+      card.appendChild(list);
+      grid.appendChild(card);
     }
-    section.appendChild(list);
+
+    section.appendChild(grid);
     container.appendChild(section);
   }
 }
@@ -405,6 +463,7 @@ function setupSharePanel() {
       updateMySchedule();
       updateRecommendations();
       updateCounter();
+      renderClubesPanel();
       showToast(`¡Agenda cargada! (${newSelection.size} artistas)`);
     } else {
       showToast('Seed inválido');
@@ -514,9 +573,13 @@ function setupSearch() {
       return;
     }
 
-    const matches = ARTISTS.filter(a => 
-      a.name.toLowerCase().includes(query) && !a.genres.includes('performance')
-    ).slice(0, 8);
+    const matches = ARTISTS
+      .filter(a => a.name.toLowerCase().includes(query) && !a.genres.includes('performance'))
+      .sort((a, b) => {
+        if (a.isClub !== b.isClub) return Number(a.isClub) - Number(b.isClub);
+        return timeToMinutes(a.startTime) - timeToMinutes(b.startTime);
+      })
+      .slice(0, 8);
 
     if (matches.length === 0) {
       searchResults.classList.remove('visible');
@@ -528,11 +591,13 @@ function setupSearch() {
 
     for (const artist of matches) {
       const stage = STAGES.find(s => s.id === artist.stage);
+      const metaLabel = artist.isClub ? `🎉 ${getArtistMetaLabel(artist)}` : stage.name;
+      const displayName = getArtistDisplayName(artist);
       const item = document.createElement('button');
       item.className = `search-item ${selectedIds.has(artist.id) ? 'selected' : ''}`;
       item.innerHTML = `
-        <span class="search-name">${artist.name}</span>
-        <span class="search-meta">${dayLabels[artist.day]} ${artist.startTime} · <span style="color:${stage.color}">${stage.name}</span></span>
+        <span class="search-name">${displayName}${artist.isClub ? ' <span class="club-tag-inline">🎉 CLUBES</span>' : ''}${artist.isSpecial ? ` <span class="special-tag-inline">${artist.specialLabel || 'Especial'}</span>` : ''}</span>
+        <span class="search-meta">${dayLabels[artist.day]} ${artist.startTime} · <span style="color:${stage.color}">${metaLabel}</span></span>
       `;
       item.addEventListener('click', () => {
         toggleArtist(artist.id);

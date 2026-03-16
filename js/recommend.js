@@ -75,8 +75,8 @@ export function getRecommendations(selectedIds, hideConflicts = false, maxResult
     // Skip already selected
     if (selectedIds.has(artist.id)) continue;
 
-    // Skip performance (Fuerza Bruta shows)
-    if (artist.genres.includes('performance')) continue;
+    // Skip supplementary items from the main recommendation stream
+    if (artist.genres.includes('performance') || artist.isClub) continue;
 
     // Optionally skip conflicts
     if (hideConflicts) {

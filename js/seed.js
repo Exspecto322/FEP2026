@@ -3,7 +3,7 @@
 // Compresses schedule selections into a URL-safe string
 // ============================================================
 
-import { ARTISTS, TOTAL_ARTISTS } from './data.js';
+import { ARTISTS, TOTAL_ARTISTS, getArtistDisplayName, getArtistMetaLabel } from './data.js';
 
 // Base64url alphabet (URL-safe, no padding)
 const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
@@ -133,7 +133,9 @@ export function exportAsText(selectedIds) {
 
     text += `📅 ${dayLabel}\n`;
     for (const a of dayArtists) {
-      text += `  ${a.startTime}–${a.endTime}  ${a.name}\n`;
+      const meta = a.isClub ? ` · ${getArtistMetaLabel(a)}` : '';
+      const special = a.isSpecial ? ` · ${a.specialLabel || 'Especial'}` : '';
+      text += `  ${a.startTime}–${a.endTime}  ${getArtistDisplayName(a)}${meta}${special}\n`;
     }
     text += '\n';
   }

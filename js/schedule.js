@@ -181,6 +181,12 @@ export function updateSelectionVisuals(selectedIds) {
   document.querySelectorAll('.artist-block, .list-row').forEach(el => {
     const id = parseInt(el.dataset.artistId);
     el.classList.toggle('selected', selectedIds.has(id));
+    el.classList.remove('conflict');
+
+    const check = el.querySelector('.list-check');
+    if (check) {
+      check.textContent = selectedIds.has(id) ? '✓' : '';
+    }
   });
 
   // Re-check conflicts for selected items
