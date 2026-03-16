@@ -1403,75 +1403,29 @@ input, textarea {
 
 .map-route-shadow {
   fill: none;
-  stroke: rgba(0, 0, 0, 0.45);
-  stroke-width: 2.35;
+  stroke-width: 6.25;
   stroke-linecap: round;
   stroke-linejoin: round;
-}
-
-.map-route-track {
-  fill: none;
-  stroke-width: 4.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  opacity: 0.18;
-}
-
-.map-route-track.personal {
-  stroke: #ffd166;
-}
-
-.map-route-track.group {
-  stroke: #00e676;
+  vector-effect: non-scaling-stroke;
 }
 
 .map-route-line {
   fill: none;
-  stroke-width: 2.2;
+  stroke-width: 3.35;
   stroke-linecap: round;
   stroke-linejoin: round;
-  filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.14));
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.22));
+  vector-effect: non-scaling-stroke;
 }
 
-.map-route-line.personal {
-  stroke: #ffd166;
-}
-
-.map-route-line.group {
-  stroke: #00e676;
-}
-
-.map-route-flow {
+.map-route-guide {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.96);
-  stroke-width: 0.95;
+  stroke-width: 1.05;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-dasharray: 3 12;
-  animation: route-flow 16s linear infinite;
-}
-
-.map-route-arrow {
-  fill: none;
-  stroke-width: 0.42;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  opacity: 0.82;
-  pointer-events: none;
-}
-
-.map-route-arrow.personal {
-  stroke: rgba(255, 209, 102, 0.92);
-}
-
-.map-route-arrow.group {
-  stroke: rgba(140, 247, 177, 0.92);
-}
-
-@keyframes route-flow {
-  to {
-    stroke-dashoffset: -100;
-  }
+  stroke-dasharray: 1 7;
+  opacity: 0.68;
+  vector-effect: non-scaling-stroke;
 }
 
 .map-node {
@@ -1511,19 +1465,19 @@ input, textarea {
 }
 
 .map-node.is-route .map-node-core {
-  width: 34px;
-  height: 34px;
-  background: var(--node-color);
+  width: 32px;
+  height: 32px;
+  background: #f6f1e4;
   color: #101012;
-  border-color: rgba(255, 255, 255, 0.95);
+  border-color: rgba(11, 13, 17, 0.86);
   box-shadow:
-    0 0 0 7px color-mix(in srgb, var(--node-color) 14%, transparent),
+    0 0 0 4px color-mix(in srgb, var(--node-color) 22%, transparent),
     0 10px 24px rgba(0, 0, 0, 0.3);
 }
 
 .map-node.is-repeat .map-node-core {
   width: auto;
-  min-width: 34px;
+  min-width: 32px;
   padding: 0 8px;
   font-size: 0.66rem;
 }
@@ -1535,22 +1489,22 @@ input, textarea {
 .map-node.is-entry .map-node-core {
   width: 20px;
   height: 20px;
-  background: rgba(13, 13, 18, 0.84);
-  border-color: rgba(255, 209, 102, 0.95);
+  background: rgba(13, 13, 18, 0.9);
+  border-color: #e6d7b8;
   box-shadow:
-    0 0 0 8px rgba(255, 209, 102, 0.12),
+    0 0 0 6px rgba(230, 215, 184, 0.16),
     0 10px 24px rgba(0, 0, 0, 0.24);
 }
 
 .map-node.is-start .map-node-core {
   box-shadow:
-    0 0 0 8px rgba(255, 209, 102, 0.16),
+    0 0 0 6px rgba(230, 215, 184, 0.18),
     0 10px 24px rgba(0, 0, 0, 0.28);
 }
 
 .map-node.is-end .map-node-core {
   box-shadow:
-    0 0 0 8px rgba(0, 230, 118, 0.16),
+    0 0 0 6px rgba(191, 216, 204, 0.2),
     0 10px 24px rgba(0, 0, 0, 0.28);
 }
 

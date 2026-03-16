@@ -40,6 +40,47 @@ const SUPPORT_STOP_META = {
   },
 };
 
+const ROUTE_VISUAL_THEME = {
+  personal: {
+    line: '#F6F1E4',
+    guide: 'rgba(90, 82, 66, 0.34)',
+    modeFill: 'rgba(230, 215, 184, 0.16)',
+    modeStroke: 'rgba(230, 215, 184, 0.24)',
+    modeText: '#F3E1B9',
+    modeGlow: '#E6D7B8',
+  },
+  group: {
+    line: '#EEF3EF',
+    guide: 'rgba(74, 91, 84, 0.34)',
+    modeFill: 'rgba(200, 217, 209, 0.16)',
+    modeStroke: 'rgba(200, 217, 209, 0.24)',
+    modeText: '#D7EEE4',
+    modeGlow: '#C8D9D1',
+  },
+};
+
+const ROUTE_VISUAL_BASE = {
+  casing: 'rgba(11, 13, 17, 0.88)',
+  markerFill: '#F6F1E4',
+  markerBorder: 'rgba(11, 13, 17, 0.86)',
+  markerText: '#101012',
+  entryFill: 'rgba(13, 13, 18, 0.9)',
+  entryBorder: '#E6D7B8',
+  entryLabelFill: 'rgba(230, 215, 184, 0.18)',
+  entryLabelStroke: 'rgba(230, 215, 184, 0.28)',
+  entryLabelText: '#F3E1B9',
+  finishLabelFill: 'rgba(191, 216, 204, 0.18)',
+  finishLabelStroke: 'rgba(191, 216, 204, 0.28)',
+  finishLabelText: '#DCEFE6',
+};
+
+function getRouteVisualTheme(mode = 'personal') {
+  return {
+    ...ROUTE_VISUAL_BASE,
+    ...(ROUTE_VISUAL_THEME[mode] || ROUTE_VISUAL_THEME.personal),
+  };
+}
+
 const MAP_LAYER_META = {
   stage: {
     label: 'Escenarios',
@@ -793,53 +834,6 @@ function buildRoundedPath(points) {
   return path;
 }
 
-function getPointAlongPolyline(points, fraction = 0.5) {
-  const deduped = dedupeSequentialPoints(points);
-  if (deduped.length === 0) return null;
-  if (deduped.length === 1) return { x: deduped[0].x, y: deduped[0].y, angle: 0 };
-
-  const segmentLengths = [];
-  let totalLength = 0;
-
-  for (let index = 0; index < deduped.length - 1; index++) {
-    const start = deduped[index];
-    const end = deduped[index + 1];
-    const length = Math.hypot(end.x - start.x, end.y - start.y);
-    segmentLengths.push(length);
-    totalLength += length;
-  }
-
-  if (totalLength === 0) {
-    return { x: deduped[0].x, y: deduped[0].y, angle: 0 };
-  }
-
-  const target = totalLength * fraction;
-  let traversed = 0;
-
-  for (let index = 0; index < segmentLengths.length; index++) {
-    const length = segmentLengths[index];
-    const start = deduped[index];
-    const end = deduped[index + 1];
-    if (traversed + length >= target) {
-      const local = (target - traversed) / length;
-      return {
-        x: start.x + (end.x - start.x) * local,
-        y: start.y + (end.y - start.y) * local,
-        angle: Math.atan2(end.y - start.y, end.x - start.x) * (180 / Math.PI),
-      };
-    }
-    traversed += length;
-  }
-
-  const lastStart = deduped[deduped.length - 2];
-  const last = deduped[deduped.length - 1];
-  return {
-    x: last.x,
-    y: last.y,
-    angle: Math.atan2(last.y - lastStart.y, last.x - lastStart.x) * (180 / Math.PI),
-  };
-}
-
 function buildRouteSvg(routeData, mode) {
   const routePoints = routeData.routePoints || routeData.pathLocations;
   if (routePoints.length < 2) {
@@ -847,20 +841,12 @@ function buildRouteSvg(routeData, mode) {
   }
 
   const pathData = buildRoundedPath(routePoints);
-  const directionMarkers = routeData.segments
-    .map(segment => {
-      const point = getPointAlongPolyline(segment.points, 0.5);
-      if (!point) return '';
-      return `<path class="map-route-arrow ${mode}" d="M -0.75 -0.55 L 0.55 0 L -0.75 0.55" transform="translate(${point.x} ${point.y}) rotate(${point.angle})" />`;
-    })
-    .join('');
+  const theme = getRouteVisualTheme(mode);
 
   return `
-    <path class="map-route-track ${mode}" d="${pathData}" pathLength="100" />
-    <path class="map-route-shadow" d="${pathData}" />
-    <path class="map-route-line ${mode}" d="${pathData}" pathLength="100" />
-    <path class="map-route-flow ${mode}" d="${pathData}" pathLength="100" />
-    ${directionMarkers}
+    <path class="map-route-shadow" d="${pathData}" style="stroke:${theme.casing}" />
+    <path class="map-route-line" d="${pathData}" style="stroke:${theme.line}" />
+    <path class="map-route-guide" d="${pathData}" style="stroke:${theme.guide}" />
   `;
 }
 
@@ -1265,58 +1251,29 @@ function scalePointToRect(point, rect) {
   };
 }
 
-function drawArrowGlyph(ctx, x, y, angle, color) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate((angle * Math.PI) / 180);
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 3.4;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.beginPath();
-  ctx.moveTo(-7, -5);
-  ctx.lineTo(0, 0);
-  ctx.lineTo(-7, 5);
-  ctx.stroke();
-  ctx.restore();
-}
-
 function drawRouteOnCanvas(ctx, routeData, mode, rect) {
-  const color = mode === 'group' ? '#00e676' : '#ffd166';
+  const theme = getRouteVisualTheme(mode);
   const routePoints = (routeData.routePoints || routeData.pathLocations).map(point => scalePointToRect(point, rect));
   if (routePoints.length < 2) return;
 
   const path = new Path2D(buildRoundedPath(routePoints));
 
   ctx.save();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 16;
+  ctx.strokeStyle = theme.casing;
+  ctx.lineWidth = 8.4;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-  ctx.globalAlpha = 0.18;
   ctx.stroke(path);
 
-  ctx.globalAlpha = 1;
-  ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-  ctx.lineWidth = 10;
+  ctx.strokeStyle = theme.line;
+  ctx.lineWidth = 4.8;
   ctx.stroke(path);
 
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 7;
-  ctx.stroke(path);
-
-  ctx.strokeStyle = 'rgba(255,255,255,0.92)';
-  ctx.lineWidth = 3;
-  ctx.setLineDash([8, 22]);
-  ctx.lineDashOffset = -12;
+  ctx.strokeStyle = theme.guide;
+  ctx.lineWidth = 1.35;
+  ctx.setLineDash([1.2, 8.6]);
   ctx.stroke(path);
   ctx.restore();
-
-  routeData.segments.forEach((segment, index) => {
-    const point = getPointAlongPolyline(segment.points.map(entry => scalePointToRect(entry, rect)), 0.55);
-    if (!point) return;
-    drawArrowGlyph(ctx, point.x, point.y, point.angle, color);
-  });
 
   const orderedStops = routeData.pathLocations.filter((location, index) => !(index === 0 && location.id === FESTIVAL_ENTRY_ID));
   const routeOrdersByLocation = new Map();
@@ -1332,20 +1289,41 @@ function drawRouteOnCanvas(ctx, routeData, mode, rect) {
     .forEach((location, index) => {
       const originalLocation = routeData.pathLocations[index];
       const isEntry = index === 0 && originalLocation.id === FESTIVAL_ENTRY_ID;
+      const accent = MAP_LAYER_META[originalLocation.category]?.color || theme.modeText;
       const stopOrders = routeOrdersByLocation.get(originalLocation.id) || [];
       const stopOrder = isEntry ? 0 : stopOrders[0];
       const isStart = !isEntry && stopOrder === 1;
       const isEnd = originalLocation.id === lastStopId && !isEntry;
+
       ctx.save();
-      ctx.fillStyle = isEntry ? 'rgba(13,13,18,0.86)' : color;
-      ctx.strokeStyle = isEntry ? 'rgba(255,209,102,0.96)' : 'rgba(255,255,255,0.96)';
-      ctx.lineWidth = isEntry ? 3 : 4;
+
+      if (isEntry) {
+        ctx.globalAlpha = 0.22;
+        ctx.strokeStyle = theme.entryBorder;
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.arc(location.x, location.y, 15, 0, Math.PI * 2);
+        ctx.stroke();
+      } else {
+        ctx.globalAlpha = 0.28;
+        ctx.strokeStyle = accent;
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.arc(location.x, location.y, 21.5, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = isEntry ? theme.entryFill : theme.markerFill;
+      ctx.strokeStyle = isEntry ? theme.entryBorder : theme.markerBorder;
+      ctx.lineWidth = isEntry ? 2.8 : 3;
       ctx.beginPath();
-      ctx.arc(location.x, location.y, isEntry ? 12 : 18, 0, Math.PI * 2);
+      ctx.arc(location.x, location.y, isEntry ? 11.5 : 17.5, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
+
       if (!isEntry) {
-        ctx.fillStyle = '#101012';
+        ctx.fillStyle = theme.markerText;
         ctx.font = "800 20px 'Outfit', sans-serif";
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -1355,15 +1333,18 @@ function drawRouteOnCanvas(ctx, routeData, mode, rect) {
 
       const label = isEntry ? 'Ingreso al festival' : isStart ? 'Primera parada' : isEnd ? 'Última parada' : '';
       if (label) {
+        const fillStyle = isEntry || isStart ? theme.entryLabelFill : theme.finishLabelFill;
+        const strokeStyle = isEntry || isStart ? theme.entryLabelStroke : theme.finishLabelStroke;
+        const color = isEntry || isStart ? theme.entryLabelText : theme.finishLabelText;
         drawPill(
           ctx,
           location.x - (isEntry ? 78 : 56),
           location.y - 52,
           label,
           {
-            fillStyle: isEntry ? 'rgba(255,209,102,0.18)' : isEnd ? 'rgba(0,230,118,0.2)' : 'rgba(255,209,102,0.2)',
-            strokeStyle: isEntry ? 'rgba(255,209,102,0.26)' : isEnd ? 'rgba(0,230,118,0.28)' : 'rgba(255,209,102,0.3)',
-            color: isEntry ? '#ffd98a' : isEnd ? '#8cf7b1' : '#ffd98a',
+            fillStyle,
+            strokeStyle,
+            color,
             font: "800 16px 'Outfit', sans-serif",
             paddingX: 12,
             paddingY: 6,
@@ -1468,6 +1449,7 @@ function buildRouteTextExport(routeData, dayId, activeMode, shareUrl = '', selec
 async function exportRouteImage(routeData, dayId, activeMode, shareUrl = '', selectionSeed = '') {
   const day = DAYS.find(entry => entry.id === dayId);
   const mapImage = await loadImage(MAP_IMAGE_SRC);
+  const routeTheme = getRouteVisualTheme(activeMode);
   const width = 1600;
   const mapHeight = 860;
   const startsFromEntry = routeData.pathLocations[0]?.id === FESTIVAL_ENTRY_ID;
@@ -1488,8 +1470,8 @@ async function exportRouteImage(routeData, dayId, activeMode, shareUrl = '', sel
   ctx.fillRect(0, 0, width, height);
 
   ctx.save();
-  ctx.globalAlpha = 0.18;
-  ctx.fillStyle = activeMode === 'group' ? '#00e676' : '#ffd166';
+  ctx.globalAlpha = 0.14;
+  ctx.fillStyle = routeTheme.modeGlow;
   ctx.beginPath();
   ctx.arc(width - 180, 170, 180, 0, Math.PI * 2);
   ctx.fill();
@@ -1515,9 +1497,9 @@ async function exportRouteImage(routeData, dayId, activeMode, shareUrl = '', sel
     color: '#F8F3E8',
   }) + 12;
   pillX += drawPill(ctx, pillX, pillY, activeMode === 'group' ? 'Ruta grupo' : 'Mi ruta', {
-    fillStyle: activeMode === 'group' ? 'rgba(0,230,118,0.16)' : 'rgba(255,209,102,0.16)',
-    strokeStyle: activeMode === 'group' ? 'rgba(0,230,118,0.26)' : 'rgba(255,209,102,0.24)',
-    color: activeMode === 'group' ? '#8cf7b1' : '#ffd98a',
+    fillStyle: routeTheme.modeFill,
+    strokeStyle: routeTheme.modeStroke,
+    color: routeTheme.modeText,
   }) + 12;
   drawPill(ctx, pillX, pillY, `~${routeData.totalWalkMinutes} min caminando`, {
     fillStyle: 'rgba(124,77,255,0.16)',
@@ -1555,9 +1537,9 @@ async function exportRouteImage(routeData, dayId, activeMode, shareUrl = '', sel
   y += 26;
 
   if (startsFromEntry && routeData.segments[0] && routeData.items[0]) {
-    fillRoundedRect(ctx, contentX, y, contentWidth, 74, 22, 'rgba(255,255,255,0.04)', 'rgba(255,209,102,0.14)', 1);
+    fillRoundedRect(ctx, contentX, y, contentWidth, 74, 22, 'rgba(255,255,255,0.04)', routeTheme.modeStroke, 1);
     ctx.save();
-    ctx.fillStyle = '#ffd98a';
+    ctx.fillStyle = routeTheme.modeText;
     ctx.font = "800 16px 'Outfit', sans-serif";
     ctx.fillText('INICIO', contentX + 18, y + 24);
     ctx.fillStyle = '#F8F3E8';
@@ -1581,12 +1563,12 @@ async function exportRouteImage(routeData, dayId, activeMode, shareUrl = '', sel
       56,
       56,
       20,
-      activeMode === 'group' ? 'rgba(0,230,118,0.2)' : 'rgba(255,209,102,0.2)',
-      activeMode === 'group' ? 'rgba(0,230,118,0.3)' : 'rgba(255,209,102,0.3)',
+      routeTheme.modeFill,
+      routeTheme.modeStroke,
       1.2
     );
     ctx.save();
-    ctx.fillStyle = activeMode === 'group' ? '#8cf7b1' : '#ffd98a';
+    ctx.fillStyle = routeTheme.modeText;
     ctx.font = "800 24px 'Outfit', sans-serif";
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
