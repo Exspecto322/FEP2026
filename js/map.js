@@ -191,52 +191,52 @@ const CLUB_VENUE_TO_LOCATION = {
 };
 
 const PATH_NODES = {
-  'festival-entry-node': { id: 'festival-entry-node', x: 6.9, y: 40.1 },
-  'west-gate': { id: 'west-gate', x: 9.2, y: 40.6 },
-  'west-inner': { id: 'west-inner', x: 14.3, y: 40.0 },
-  'west-curve': { id: 'west-curve', x: 19.6, y: 39.8 },
-  'bosque-hub': { id: 'bosque-hub', x: 25.1, y: 38.7 },
-  'bosque-stage': { id: 'bosque-stage', x: 25.7, y: 35.8 },
-  'north-west-1': { id: 'north-west-1', x: 31.2, y: 34.9 },
+  'festival-entry-node': { id: 'festival-entry-node', x: 5.0, y: 39.9 },
+  'west-gate': { id: 'west-gate', x: 9.0, y: 41.6 },
+  'west-inner': { id: 'west-inner', x: 14.9, y: 38.8 },
+  'west-curve': { id: 'west-curve', x: 19.7, y: 40.6 },
+  'bosque-hub': { id: 'bosque-hub', x: 25.7, y: 38.7 },
+  'bosque-stage': { id: 'bosque-stage', x: 25.8, y: 35.9 },
+  'north-west-1': { id: 'north-west-1', x: 31.0, y: 34.6 },
   'north-west-2': { id: 'north-west-2', x: 37.4, y: 30.8 },
-  'north-west-3': { id: 'north-west-3', x: 44.3, y: 26.8 },
-  'north-center': { id: 'north-center', x: 51.6, y: 23.5 },
-  'north-center-2': { id: 'north-center-2', x: 58.1, y: 23.4 },
-  'north-arc-1': { id: 'north-arc-1', x: 65.1, y: 23.0 },
-  'north-arc-2': { id: 'north-arc-2', x: 72.2, y: 23.1 },
-  'aora-node': { id: 'aora-node', x: 60.1, y: 31.0 },
-  'rompe-node': { id: 'rompe-node', x: 61.4, y: 38.4 },
-  'lago-node': { id: 'lago-node', x: 67.7, y: 31.5 },
-  'east-upper-1': { id: 'east-upper-1', x: 76.3, y: 29.6 },
-  'east-upper-2': { id: 'east-upper-2', x: 81.4, y: 31.7 },
-  'paramo-node': { id: 'paramo-node', x: 82.0, y: 42.8 },
+  'north-west-3': { id: 'north-west-3', x: 44.4, y: 26.8 },
+  'north-center': { id: 'north-center', x: 51.8, y: 23.5 },
+  'north-center-2': { id: 'north-center-2', x: 57.5, y: 23.3 },
+  'north-arc-1': { id: 'north-arc-1', x: 64.8, y: 23.4 },
+  'north-arc-2': { id: 'north-arc-2', x: 71.0, y: 25.7 },
+  'aora-node': { id: 'aora-node', x: 60.1, y: 30.5 },
+  'rompe-node': { id: 'rompe-node', x: 62.6, y: 35.6 },
+  'lago-node': { id: 'lago-node', x: 67.9, y: 31.3 },
+  'east-upper-1': { id: 'east-upper-1', x: 76.1, y: 30.4 },
+  'east-upper-2': { id: 'east-upper-2', x: 81.4, y: 32.6 },
+  'paramo-node': { id: 'paramo-node', x: 82.8, y: 42.4 },
   'fb-node': { id: 'fb-node', x: 91.4, y: 43.4 },
-  'center-west': { id: 'center-west', x: 33.0, y: 45.4 },
-  'center-mid-1': { id: 'center-mid-1', x: 41.2, y: 47.0 },
-  'center-mid-2': { id: 'center-mid-2', x: 48.8, y: 46.3 },
-  'center-hub': { id: 'center-hub', x: 56.2, y: 43.8 },
-  'center-east': { id: 'center-east', x: 62.2, y: 45.1 },
-  'coke-node': { id: 'coke-node', x: 65.1, y: 50.0 },
-  'east-mid-1': { id: 'east-mid-1', x: 72.9, y: 48.7 },
-  'east-mid': { id: 'east-mid', x: 79.8, y: 49.5 },
-  'east-descent-1': { id: 'east-descent-1', x: 76.8, y: 60.8 },
+  'center-west': { id: 'center-west', x: 31.2, y: 46.9 },
+  'center-mid-1': { id: 'center-mid-1', x: 41.2, y: 47.6 },
+  'center-mid-2': { id: 'center-mid-2', x: 49.2, y: 44.8 },
+  'center-hub': { id: 'center-hub', x: 56.7, y: 44.0 },
+  'center-east': { id: 'center-east', x: 61.7, y: 46.2 },
+  'coke-node': { id: 'coke-node', x: 65.1, y: 49.6 },
+  'east-mid-1': { id: 'east-mid-1', x: 73.0, y: 48.5 },
+  'east-mid': { id: 'east-mid', x: 79.6, y: 50.6 },
+  'east-descent-1': { id: 'east-descent-1', x: 75.7, y: 60.8 },
   'east-descent-2': { id: 'east-descent-2', x: 72.6, y: 68.0 },
-  'south-west-1': { id: 'south-west-1', x: 30.6, y: 52.8 },
+  'south-west-1': { id: 'south-west-1', x: 30.6, y: 53.2 },
   'south-west-2': { id: 'south-west-2', x: 34.0, y: 58.5 },
   'south-west': { id: 'south-west', x: 39.8, y: 62.4 },
   'umd-node': { id: 'umd-node', x: 38.8, y: 60.9 },
-  'south-center-1': { id: 'south-center-1', x: 53.9, y: 55.4 },
-  'south-center-2': { id: 'south-center-2', x: 54.7, y: 62.8 },
-  'south-center': { id: 'south-center', x: 55.6, y: 68.0 },
+  'south-center-1': { id: 'south-center-1', x: 54.1, y: 55.0 },
+  'south-center-2': { id: 'south-center-2', x: 54.8, y: 63.9 },
+  'south-center': { id: 'south-center', x: 55.3, y: 68.0 },
   'south-east-1': { id: 'south-east-1', x: 61.7, y: 70.8 },
-  'south-east': { id: 'south-east', x: 68.4, y: 75.0 },
-  'ep-approach': { id: 'ep-approach', x: 79.8, y: 77.2 },
-  'ep-node': { id: 'ep-node', x: 85.2, y: 78.4 },
-  'vip-corridor': { id: 'vip-corridor', x: 56.6, y: 84.7 },
-  'vip-entry': { id: 'vip-entry', x: 58.7, y: 92.6 },
-  'general-corridor': { id: 'general-corridor', x: 68.8, y: 87.0 },
+  'south-east': { id: 'south-east', x: 68.2, y: 75.9 },
+  'ep-approach': { id: 'ep-approach', x: 79.8, y: 77.6 },
+  'ep-node': { id: 'ep-node', x: 85.2, y: 78.3 },
+  'vip-corridor': { id: 'vip-corridor', x: 56.3, y: 85.1 },
+  'vip-entry': { id: 'vip-entry', x: 58.6, y: 92.8 },
+  'general-corridor': { id: 'general-corridor', x: 68.8, y: 88.4 },
   'general-entry': { id: 'general-entry', x: 69.1, y: 95.7 },
-  'futuro-corridor': { id: 'futuro-corridor', x: 76.9, y: 88.8 },
+  'futuro-corridor': { id: 'futuro-corridor', x: 76.8, y: 89.9 },
   'futuro-entry': { id: 'futuro-entry', x: 83.3, y: 96.2 },
 };
 
@@ -256,7 +256,6 @@ const PATH_EDGES = [
   ['north-arc-2', 'lago-node'],
   ['north-center-2', 'aora-node'],
   ['aora-node', 'rompe-node'],
-  ['aora-node', 'lago-node'],
   ['lago-node', 'east-upper-1'],
   ['east-upper-1', 'east-upper-2'],
   ['east-upper-2', 'paramo-node'],
@@ -293,7 +292,6 @@ const PATH_EDGES = [
   ['south-east', 'ep-approach'],
   ['ep-approach', 'ep-node'],
   ['east-mid', 'paramo-node'],
-  ['coke-node', 'south-east-1'],
 ];
 
 const LOCATION_TO_PATH_NODE = {
@@ -813,44 +811,12 @@ function getRouteData(dayId, selectedIds, mode, mergeState) {
   return mode === 'group' ? buildGroupRoute(dayId, mergeState) : buildPersonalRoute(dayId, selectedIds);
 }
 
-function offsetPoint(from, to, distance) {
-  const deltaX = to.x - from.x;
-  const deltaY = to.y - from.y;
-  const length = Math.hypot(deltaX, deltaY);
-  if (length === 0) {
-    return { x: from.x, y: from.y };
-  }
-
-  return {
-    x: from.x + (deltaX / length) * distance,
-    y: from.y + (deltaY / length) * distance,
-  };
-}
-
 function buildRoundedPath(points) {
   const deduped = dedupeSequentialPoints(points);
   if (deduped.length === 0) return '';
-  if (deduped.length === 1) return `M ${deduped[0].x} ${deduped[0].y}`;
-  if (deduped.length === 2) return `M ${deduped[0].x} ${deduped[0].y} L ${deduped[1].x} ${deduped[1].y}`;
-
-  let path = `M ${deduped[0].x} ${deduped[0].y}`;
-
-  for (let index = 1; index < deduped.length - 1; index++) {
-    const previous = deduped[index - 1];
-    const current = deduped[index];
-    const next = deduped[index + 1];
-    const prevDistance = Math.hypot(current.x - previous.x, current.y - previous.y);
-    const nextDistance = Math.hypot(next.x - current.x, next.y - current.y);
-    const radius = Math.min(0.45, prevDistance * 0.22, nextDistance * 0.22);
-    const entry = offsetPoint(current, previous, radius);
-    const exit = offsetPoint(current, next, radius);
-
-    path += ` L ${entry.x} ${entry.y} Q ${current.x} ${current.y} ${exit.x} ${exit.y}`;
-  }
-
-  const last = deduped[deduped.length - 1];
-  path += ` L ${last.x} ${last.y}`;
-  return path;
+  return deduped
+    .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`)
+    .join(' ');
 }
 
 function buildRouteSvg(routeData, mode) {
