@@ -81,6 +81,51 @@ function getRouteVisualTheme(mode = 'personal') {
   };
 }
 
+const ROUTE_ORDER_PALETTE = [
+  '#F6D96B',
+  '#8BE1B1',
+  '#FFAA8A',
+  '#7ED9F6',
+  '#C9B7FF',
+  '#BDE96F',
+  '#FFC285',
+  '#FF91B5',
+];
+
+function getPathLocationOrders(pathLocations = []) {
+  let order = 0;
+  return pathLocations.map(location => (location?.id === FESTIVAL_ENTRY_ID ? 0 : ++order));
+}
+
+function getRouteOrderColor(order, mode = 'personal') {
+  if (order <= 0) {
+    return getRouteVisualTheme(mode).entryLabelText;
+  }
+  return ROUTE_ORDER_PALETTE[(order - 1) % ROUTE_ORDER_PALETTE.length];
+}
+
+function getRouteOrderColors(orderList = [], mode = 'personal') {
+  const validOrders = orderList.filter(order => order > 0);
+  if (validOrders.length === 0) {
+    const neutral = getRouteOrderColor(0, mode);
+    return { start: neutral, end: neutral };
+  }
+
+  return {
+    start: getRouteOrderColor(validOrders[0], mode),
+    end: getRouteOrderColor(validOrders[validOrders.length - 1], mode),
+  };
+}
+
+function createCanvasGradient(ctx, points, startColor, endColor) {
+  const start = points[0];
+  const end = points[points.length - 1];
+  const gradient = ctx.createLinearGradient(start.x, start.y, end.x, end.y);
+  gradient.addColorStop(0, startColor);
+  gradient.addColorStop(1, endColor);
+  return gradient;
+}
+
 const MAP_LAYER_META = {
   stage: {
     label: 'Escenarios',
@@ -820,19 +865,39 @@ function buildRoundedPath(points) {
 }
 
 function buildRouteSvg(routeData, mode) {
-  const routePoints = routeData.routePoints || routeData.pathLocations;
-  if (routePoints.length < 2) {
+  if (!routeData.segments?.length) {
     return '';
   }
 
-  const pathData = buildRoundedPath(routePoints);
   const theme = getRouteVisualTheme(mode);
+  const locationOrders = getPathLocationOrders(routeData.pathLocations);
+  const defs = [];
+  const segments = [];
 
-  return `
-    <path class="map-route-shadow" d="${pathData}" style="stroke:${theme.casing}" />
-    <path class="map-route-line" d="${pathData}" style="stroke:${theme.line}" />
-    <path class="map-route-guide" d="${pathData}" style="stroke:${theme.guide}" />
-  `;
+  routeData.segments.forEach((segment, index) => {
+    if (!segment.points?.length || segment.points.length < 2) return;
+    const pathData = buildRoundedPath(segment.points);
+    const gradientId = `map-route-gradient-${mode}-${index}`;
+    const startColor = getRouteOrderColor(locationOrders[index], mode);
+    const endColor = getRouteOrderColor(locationOrders[index + 1], mode);
+    const startPoint = segment.points[0];
+    const endPoint = segment.points[segment.points.length - 1];
+
+    defs.push(`
+      <linearGradient id="${gradientId}" gradientUnits="userSpaceOnUse" x1="${startPoint.x}" y1="${startPoint.y}" x2="${endPoint.x}" y2="${endPoint.y}">
+        <stop offset="0%" stop-color="${startColor}" />
+        <stop offset="100%" stop-color="${endColor}" />
+      </linearGradient>
+    `);
+
+    segments.push(`
+      <path class="map-route-shadow" d="${pathData}" style="stroke:${theme.casing}" />
+      <path class="map-route-line" d="${pathData}" style="stroke:url(#${gradientId})" />
+      <path class="map-route-guide" d="${pathData}" style="stroke:${theme.guide}" />
+    `);
+  });
+
+  return `<defs>${defs.join('')}</defs>${segments.join('')}`;
 }
 
 function formatRouteOverview(routeData, dayId, activeMode) {
@@ -945,15 +1010,21 @@ function renderRouteSummary(target, routeData, activeMode) {
 
   const startsFromEntry = routeData.pathLocations[0]?.id === FESTIVAL_ENTRY_ID;
   if (startsFromEntry && routeData.segments[0] && routeData.items[0]) {
+    const firstStepColors = getRouteOrderColors([1], activeMode);
     const entryBlock = document.createElement('div');
     entryBlock.className = 'map-route-entry';
+    entryBlock.style.setProperty('--route-color', firstStepColors.start);
+    entryBlock.style.setProperty('--route-color-end', firstStepColors.end);
     entryBlock.textContent = `Ingreso al festival → parada 1 · ~${routeData.segments[0].walkMinutes} min hasta ${routeData.segments[0].to.shortLabel}`;
     target.appendChild(entryBlock);
   }
 
   routeData.items.forEach((item, index) => {
+    const stepColors = getRouteOrderColors([index + 1], activeMode);
     const step = document.createElement('div');
     step.className = `map-route-step ${item.isConflict ? 'conflict' : ''}`;
+    step.style.setProperty('--route-color', stepColors.start);
+    step.style.setProperty('--route-color-end', stepColors.end);
     step.innerHTML = `
       <div class="map-route-step-index">${index + 1}</div>
       <div class="map-route-step-body">
@@ -971,8 +1042,14 @@ function renderRouteSummary(target, routeData, activeMode) {
     const segmentIndex = startsFromEntry ? index + 1 : index;
     if (segmentIndex < routeData.segments.length) {
       const segment = routeData.segments[segmentIndex];
+      const segmentColors = {
+        start: getRouteOrderColor(index + 1, activeMode),
+        end: getRouteOrderColor(index + 2, activeMode),
+      };
       const segmentEl = document.createElement('div');
       segmentEl.className = 'map-route-segment';
+      segmentEl.style.setProperty('--route-color', segmentColors.start);
+      segmentEl.style.setProperty('--route-color-end', segmentColors.end);
       segmentEl.textContent = `${index + 1} → ${index + 2} · ~${segment.walkMinutes} min hacia ${segment.to.shortLabel}`;
       target.appendChild(segmentEl);
     }
@@ -1087,11 +1164,14 @@ function renderMapNodes(target, visibleLayers, routeData) {
     const isEnd = location.id === lastStopId && location.id !== FESTIVAL_ENTRY_ID;
     const isRepeat = repeatLocations.has(location.id);
     const point = isRoute || isSplit ? getRouteAnchor(location) : location;
+    const routeColors = getRouteOrderColors(orderList, routeData.mode);
     const node = document.createElement('div');
     node.className = `map-node ${visibleLayers.has(location.category) && !isRoute ? 'is-layer' : ''} ${isRoute ? 'is-route' : ''} ${isSplit ? 'is-split' : ''} ${isSuggested ? 'is-suggested' : ''} ${isEntry ? 'is-entry' : ''} ${isStart ? 'is-start' : ''} ${isEnd ? 'is-end' : ''} ${isRepeat ? 'is-repeat' : ''}`;
     node.style.left = `${point.x}%`;
     node.style.top = `${point.y}%`;
     node.style.setProperty('--node-color', meta.color);
+    node.style.setProperty('--route-color', routeColors.start);
+    node.style.setProperty('--route-color-end', routeColors.end);
     if (suggestion) {
       node.style.setProperty('--suggestion-color', suggestion.color);
     }
@@ -1239,27 +1319,35 @@ function scalePointToRect(point, rect) {
 
 function drawRouteOnCanvas(ctx, routeData, mode, rect) {
   const theme = getRouteVisualTheme(mode);
-  const routePoints = (routeData.routePoints || routeData.pathLocations).map(point => scalePointToRect(point, rect));
-  if (routePoints.length < 2) return;
+  const locationOrders = getPathLocationOrders(routeData.pathLocations);
+  if (!routeData.segments?.length) return;
 
-  const path = new Path2D(buildRoundedPath(routePoints));
+  routeData.segments.forEach((segment, index) => {
+    const points = segment.points.map(point => scalePointToRect(point, rect));
+    if (points.length < 2) return;
 
-  ctx.save();
-  ctx.strokeStyle = theme.casing;
-  ctx.lineWidth = 8.4;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.stroke(path);
+    const path = new Path2D(buildRoundedPath(points));
+    const startColor = getRouteOrderColor(locationOrders[index], mode);
+    const endColor = getRouteOrderColor(locationOrders[index + 1], mode);
+    const gradient = createCanvasGradient(ctx, points, startColor, endColor);
 
-  ctx.strokeStyle = theme.line;
-  ctx.lineWidth = 4.8;
-  ctx.stroke(path);
+    ctx.save();
+    ctx.strokeStyle = theme.casing;
+    ctx.lineWidth = 8.4;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.stroke(path);
 
-  ctx.strokeStyle = theme.guide;
-  ctx.lineWidth = 1.35;
-  ctx.setLineDash([1.2, 8.6]);
-  ctx.stroke(path);
-  ctx.restore();
+    ctx.strokeStyle = gradient;
+    ctx.lineWidth = 4.8;
+    ctx.stroke(path);
+
+    ctx.strokeStyle = theme.guide;
+    ctx.lineWidth = 1.35;
+    ctx.setLineDash([1.2, 8.6]);
+    ctx.stroke(path);
+    ctx.restore();
+  });
 
   const orderedStops = routeData.pathLocations.filter((location, index) => !(index === 0 && location.id === FESTIVAL_ENTRY_ID));
   const routeOrdersByLocation = new Map();
@@ -1275,8 +1363,8 @@ function drawRouteOnCanvas(ctx, routeData, mode, rect) {
     .forEach((location, index) => {
       const originalLocation = routeData.pathLocations[index];
       const isEntry = index === 0 && originalLocation.id === FESTIVAL_ENTRY_ID;
-      const accent = MAP_LAYER_META[originalLocation.category]?.color || theme.modeText;
       const stopOrders = routeOrdersByLocation.get(originalLocation.id) || [];
+      const routeColors = getRouteOrderColors(stopOrders, mode);
       const stopOrder = isEntry ? 0 : stopOrders[0];
       const isStart = !isEntry && stopOrder === 1;
       const isEnd = originalLocation.id === lastStopId && !isEntry;
@@ -1291,8 +1379,9 @@ function drawRouteOnCanvas(ctx, routeData, mode, rect) {
         ctx.arc(location.x, location.y, 15, 0, Math.PI * 2);
         ctx.stroke();
       } else {
+        const haloColor = getRouteOrderColor(stopOrder, mode);
         ctx.globalAlpha = 0.28;
-        ctx.strokeStyle = accent;
+        ctx.strokeStyle = haloColor;
         ctx.lineWidth = 6;
         ctx.beginPath();
         ctx.arc(location.x, location.y, 21.5, 0, Math.PI * 2);
@@ -1300,7 +1389,19 @@ function drawRouteOnCanvas(ctx, routeData, mode, rect) {
       }
 
       ctx.globalAlpha = 1;
-      ctx.fillStyle = isEntry ? theme.entryFill : theme.markerFill;
+      if (isEntry) {
+        ctx.fillStyle = theme.entryFill;
+      } else {
+        ctx.fillStyle = createCanvasGradient(
+          ctx,
+          [
+            { x: location.x - 16, y: location.y - 16 },
+            { x: location.x + 16, y: location.y + 16 },
+          ],
+          routeColors.start,
+          routeColors.end
+        );
+      }
       ctx.strokeStyle = isEntry ? theme.entryBorder : theme.markerBorder;
       ctx.lineWidth = isEntry ? 2.8 : 3;
       ctx.beginPath();
@@ -1523,9 +1624,20 @@ async function exportRouteImage(routeData, dayId, activeMode, shareUrl = '', sel
   y += 26;
 
   if (startsFromEntry && routeData.segments[0] && routeData.items[0]) {
-    fillRoundedRect(ctx, contentX, y, contentWidth, 74, 22, 'rgba(255,255,255,0.04)', routeTheme.modeStroke, 1);
+    const firstStepColors = getRouteOrderColors([1], activeMode);
+    fillRoundedRect(
+      ctx,
+      contentX,
+      y,
+      contentWidth,
+      74,
+      22,
+      'rgba(255,255,255,0.04)',
+      firstStepColors.start,
+      1.1
+    );
     ctx.save();
-    ctx.fillStyle = routeTheme.modeText;
+    ctx.fillStyle = firstStepColors.start;
     ctx.font = "800 16px 'Outfit', sans-serif";
     ctx.fillText('INICIO', contentX + 18, y + 24);
     ctx.fillStyle = '#F8F3E8';
@@ -1540,6 +1652,10 @@ async function exportRouteImage(routeData, dayId, activeMode, shareUrl = '', sel
 
   routeData.items.forEach((item, index) => {
     const cardHeight = 106;
+    const stepColors = getRouteOrderColors([index + 1], activeMode);
+    const badgeGradient = ctx.createLinearGradient(contentX + 18, y + 18, contentX + 74, y + 74);
+    badgeGradient.addColorStop(0, stepColors.start);
+    badgeGradient.addColorStop(1, stepColors.end);
     fillRoundedRect(ctx, contentX, y, contentWidth, cardHeight, 28, 'rgba(255,255,255,0.04)', item.isConflict ? 'rgba(255,77,77,0.24)' : 'rgba(255,255,255,0.08)', 1.2);
 
     fillRoundedRect(
@@ -1549,12 +1665,12 @@ async function exportRouteImage(routeData, dayId, activeMode, shareUrl = '', sel
       56,
       56,
       20,
-      routeTheme.modeFill,
-      routeTheme.modeStroke,
+      badgeGradient,
+      stepColors.start,
       1.2
     );
     ctx.save();
-    ctx.fillStyle = routeTheme.modeText;
+    ctx.fillStyle = '#101012';
     ctx.font = "800 24px 'Outfit', sans-serif";
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -1585,8 +1701,11 @@ async function exportRouteImage(routeData, dayId, activeMode, shareUrl = '', sel
 
     const segment = routeData.segments[startsFromEntry ? index + 1 : index];
     if (segment) {
+      const segmentGradient = ctx.createLinearGradient(contentX + 18, y + cardHeight + 6, contentX + 180, y + cardHeight + 6);
+      segmentGradient.addColorStop(0, getRouteOrderColor(index + 1, activeMode));
+      segmentGradient.addColorStop(1, getRouteOrderColor(index + 2, activeMode));
       ctx.save();
-      ctx.fillStyle = 'rgba(210, 203, 235, 0.65)';
+      ctx.fillStyle = segmentGradient;
       ctx.font = "600 16px 'Outfit', sans-serif";
       ctx.fillText(`${index + 1} → ${index + 2} · ~${segment.walkMinutes} min hacia ${segment.to.shortLabel}`, contentX + 18, y + cardHeight + 24);
       ctx.restore();

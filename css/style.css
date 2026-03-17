@@ -1467,11 +1467,11 @@ input, textarea {
 .map-node.is-route .map-node-core {
   width: 32px;
   height: 32px;
-  background: #f6f1e4;
+  background: linear-gradient(135deg, var(--route-color, #f6f1e4), var(--route-color-end, var(--route-color, #f6f1e4)));
   color: #101012;
   border-color: rgba(11, 13, 17, 0.86);
   box-shadow:
-    0 0 0 4px color-mix(in srgb, var(--node-color) 22%, transparent),
+    0 0 0 4px color-mix(in srgb, var(--route-color, #f6f1e4) 22%, transparent),
     0 10px 24px rgba(0, 0, 0, 0.3);
 }
 
@@ -1546,9 +1546,10 @@ input, textarea {
   margin-bottom: 12px;
   padding: 12px 14px;
   border-radius: 16px;
-  background: rgba(255, 209, 102, 0.08);
-  border: 1px solid rgba(255, 209, 102, 0.14);
-  color: #ffd98a;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--route-color, #ffd98a) 16%, transparent), color-mix(in srgb, var(--route-color-end, var(--route-color, #ffd98a)) 10%, transparent));
+  border: 1px solid color-mix(in srgb, var(--route-color, #ffd98a) 22%, rgba(255, 255, 255, 0.08));
+  color: var(--route-color, #ffd98a);
   font-size: 0.76rem;
   font-weight: 700;
 }
@@ -1557,13 +1558,19 @@ input, textarea {
   display: grid;
   grid-template-columns: 34px minmax(0, 1fr);
   gap: 12px;
-  padding: 12px 0;
+  padding: 12px;
+  border-radius: 18px;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--route-color, #7c4dff) 14%, transparent), transparent 44%),
+    rgba(255, 255, 255, 0.02);
+  border: 1px solid color-mix(in srgb, var(--route-color, #7c4dff) 18%, rgba(255, 255, 255, 0.06));
+  margin-bottom: 8px;
 }
 
 .map-route-step.conflict {
   border-left: 3px solid var(--conflict);
   padding: 10px 12px 10px 10px;
-  margin-left: -10px;
+  margin-left: 0;
   border-radius: 16px;
   background: rgba(255, 77, 77, 0.08);
 }
@@ -1572,13 +1579,14 @@ input, textarea {
   width: 34px;
   height: 34px;
   border-radius: 12px;
-  background: rgba(124, 77, 255, 0.14);
-  color: #c9b0ff;
+  background: linear-gradient(135deg, var(--route-color, #7c4dff), var(--route-color-end, var(--route-color, #7c4dff)));
+  color: #101012;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
   font-family: 'Outfit', sans-serif;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--route-color, #7c4dff) 22%, transparent);
 }
 
 .map-route-step-body {
@@ -1672,11 +1680,15 @@ input, textarea {
 }
 
 .map-route-segment {
-  margin: 0 0 0 46px;
-  padding: 0 0 0 14px;
-  border-left: 1px dashed var(--border-accent);
-  color: var(--text-muted);
+  margin: 0 0 8px 46px;
+  padding: 8px 12px 10px 14px;
+  border-radius: 16px;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--route-color, #7c4dff) 16%, transparent), color-mix(in srgb, var(--route-color-end, #7c4dff) 16%, transparent));
+  border: 1px solid color-mix(in srgb, var(--route-color, #7c4dff) 18%, rgba(255, 255, 255, 0.06));
+  color: #f8f3e8;
   font-size: 0.72rem;
+  font-weight: 700;
 }
 
 .map-split-summary {
