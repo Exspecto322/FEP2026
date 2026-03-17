@@ -20,23 +20,38 @@ export const DEFAULT_MAP_LAYERS = [];
 const SUPPORT_STOP_META = {
   food: {
     label: 'Comida',
-    badgeLabel: 'Comer',
+    badgeLabel: 'Comer cerca',
     color: '#FF8A00',
   },
   water: {
     label: 'Agua',
-    badgeLabel: 'Agua',
+    badgeLabel: 'Tomar agua',
     color: '#7CE7FF',
   },
   bathroom: {
     label: 'Baños',
-    badgeLabel: 'Baños',
+    badgeLabel: 'Baños cerca',
     color: '#4DD0FF',
   },
   service: {
     label: 'Servicios',
-    badgeLabel: 'Extra',
+    badgeLabel: 'Punto útil',
     color: '#64E38B',
+  },
+};
+
+const ARRIVAL_REMINDER_META = {
+  headliner: {
+    label: 'Llega antes',
+    minutes: 20,
+    tone: 'headliner',
+    summary: 'Bloque de alta convocatoria.',
+  },
+  top: {
+    label: 'Muévete con margen',
+    minutes: 12,
+    tone: 'top',
+    summary: 'Vale la pena tomar buen lugar.',
   },
 };
 
@@ -540,26 +555,41 @@ function getRouteGapMinutes(currentItem, nextItem) {
   return Math.max(0, timeToMinutes(nextItem.startTime) - timeToMinutes(currentItem.endTime));
 }
 
+function getServiceActionLabel(location) {
+  const normalized = normalizeLabel(location?.label || '');
+  if (normalized.includes('cashless')) return 'Recargar';
+  if (normalized.includes('oasis')) return 'Descansar';
+  if (normalized.includes('merch')) return 'Merch';
+  if (normalized.includes('acces')) return 'Accesibilidad';
+  if (normalized.includes('vassar')) return 'Vassar';
+  return 'Punto útil';
+}
+
 function getServiceSuggestionTitle(location) {
   const normalized = normalizeLabel(location?.label || '');
   if (normalized.includes('cashless')) return 'Recarga cashless';
-  if (normalized.includes('oasis')) return 'Pausa y recuperación';
-  if (normalized.includes('merch')) return 'Punto útil al paso';
-  return 'Parada útil';
+  if (normalized.includes('oasis')) return 'Oasis y descanso';
+  if (normalized.includes('merch')) return 'Merch oficial';
+  if (normalized.includes('acces')) return 'Apoyo de accesibilidad';
+  if (normalized.includes('vassar')) return 'Feria Vassar';
+  return 'Punto útil';
 }
 
 function getServiceSuggestionBadge(location) {
-  const normalized = normalizeLabel(location?.label || '');
-  if (normalized.includes('cashless')) return 'Cashless';
-  if (normalized.includes('oasis')) return 'Oasis';
-  if (normalized.includes('merch')) return 'Merch';
-  return 'Extra';
+  return getServiceActionLabel(location);
+}
+
+function getSupportActionLabel(type, location) {
+  if (type === 'service') {
+    return getServiceActionLabel(location);
+  }
+  return SUPPORT_STOP_META[type]?.badgeLabel || '';
 }
 
 function createSupportSuggestion(type, location, title, reason) {
   if (!location) return null;
   const meta = SUPPORT_STOP_META[type];
-  const badgeLabel = type === 'service' ? getServiceSuggestionBadge(location) : meta.badgeLabel;
+  const badgeLabel = getSupportActionLabel(type, location);
   return {
     id: `${type}-${location.id}`,
     type,
@@ -605,7 +635,7 @@ function buildRouteSuggestions(items, segments) {
       createSupportSuggestion(
         'food',
         mealCandidate.item.nearbyFood || mealCandidate.next.nearbyFood,
-        'Ventana para comer',
+        'Pausa para comer',
         `${mealCandidate.gapMinutes} min libres entre ${mealCandidate.item.title} y ${mealCandidate.next.title}.`
       )
     );
@@ -619,7 +649,7 @@ function buildRouteSuggestions(items, segments) {
       createSupportSuggestion(
         'food',
         anchor?.nearbyFood,
-        'Comida a mano',
+        'Comer al paso',
         anchor ? `Te queda cerca al pasar por ${anchor.title}.` : 'Queda al paso dentro de tu ruta.'
       )
     );
@@ -634,7 +664,7 @@ function buildRouteSuggestions(items, segments) {
       createSupportSuggestion(
         'water',
         destinationItem?.nearbyWater || getNearestLocation(longestSegment.to, 'water'),
-        'Hidratación antes del tramo largo',
+        'Tomar agua antes del tramo largo',
         `El cambio hacia ${longestSegment.to.shortLabel} suma ~${longestSegment.walkMinutes} min caminando.`
       )
     );
@@ -682,6 +712,11 @@ function compressRouteLocations(items) {
     }
   }
   return locations;
+}
+
+function findArtistByRouteTitle(title, dayId) {
+  const normalizedTitle = normalizeLabel(title);
+  return ARTISTS.find(artist => artist.day === dayId && normalizeLabel(getArtistDisplayName(artist)) === normalizedTitle) || null;
 }
 
 function prependFestivalEntrance(pathLocations) {
@@ -746,6 +781,7 @@ function buildPersonalRoute(dayId, selectedIds) {
       endTime: artist.endTime,
       title: getArtistDisplayName(artist),
       meta: getArtistMetaLabel(artist),
+      tier: artist.tier || '',
       location,
       locationId: location?.id || '',
       isConflict: hasConflict,
@@ -811,12 +847,14 @@ function buildGroupRoute(dayId, mergeState) {
         currentItem.endTime = nextTime;
       } else {
         const support = getItemSupport(location);
+        const matchingArtist = findArtistByRouteTitle(leader.artist, dayId);
         currentItem = {
           id: `group-${slot.time}-${leader.stageId}`,
           startTime: slot.time,
           endTime: nextTime,
           title: leader.artist,
           meta: leader.stage,
+          tier: matchingArtist?.tier || '',
           location,
           locationId: leader.stageId,
           isConflict: false,
@@ -924,17 +962,71 @@ function formatConflictList(names, limit = 2) {
   return `${names.slice(0, limit).join(' · ')} +${names.length - limit}`;
 }
 
-function buildNearbyChips(item) {
-  const chips = [
-    item.nearbyFood ? { type: 'food', label: item.nearbyFood.shortLabel, badge: SUPPORT_STOP_META.food.badgeLabel } : null,
-    item.nearbyWater ? { type: 'water', label: item.nearbyWater.shortLabel, badge: SUPPORT_STOP_META.water.badgeLabel } : null,
-    item.nearbyBathroom ? { type: 'bathroom', label: item.nearbyBathroom.shortLabel, badge: SUPPORT_STOP_META.bathroom.badgeLabel } : null,
-    item.nearbyService ? { type: 'service', label: item.nearbyService.shortLabel, badge: SUPPORT_STOP_META.service.badgeLabel } : null,
-  ].filter(Boolean);
+function getIncomingSegment(routeData, index, startsFromEntry) {
+  const segmentIndex = startsFromEntry ? index : index - 1;
+  return segmentIndex >= 0 ? routeData.segments[segmentIndex] || null : null;
+}
 
-  return chips
-    .map(chip => `<span class="map-nearby-chip ${chip.type}"><span class="map-nearby-chip-kind">${chip.badge}</span><span>${chip.label}</span></span>`)
+function getArrivalReminder(item, incomingSegment, previousItem) {
+  const tierMeta = ARRIVAL_REMINDER_META[item.tier];
+  const gapMinutes = previousItem ? getRouteGapMinutes(previousItem, item) : null;
+  const textParts = [];
+
+  if (tierMeta) {
+    textParts.push(`${tierMeta.summary} Apunta a estar ~${tierMeta.minutes} min antes del inicio.`);
+    if (gapMinutes !== null && gapMinutes < tierMeta.minutes && previousItem?.title) {
+      textParts.push(`El margen real entre sets es de ${gapMinutes} min, así que conviene salir apenas termine ${previousItem.title}.`);
+    }
+  }
+
+  if (incomingSegment?.walkMinutes >= 12) {
+    textParts.push(`El tramo previo suma ~${incomingSegment.walkMinutes} min caminando.`);
+  } else if (!tierMeta && incomingSegment?.walkMinutes >= 10) {
+    textParts.push(`Reserva ~${incomingSegment.walkMinutes} min para este cambio de escenario.`);
+  }
+
+  if (textParts.length === 0) {
+    return null;
+  }
+
+  return {
+    label: tierMeta?.label || 'Cambio con margen',
+    tone: tierMeta?.tone || 'walk',
+    text: textParts.join(' '),
+  };
+}
+
+function getNearbyStops(item) {
+  return [
+    item.nearbyFood ? { type: 'food', location: item.nearbyFood, actionLabel: getSupportActionLabel('food', item.nearbyFood) } : null,
+    item.nearbyWater ? { type: 'water', location: item.nearbyWater, actionLabel: getSupportActionLabel('water', item.nearbyWater) } : null,
+    item.nearbyBathroom ? { type: 'bathroom', location: item.nearbyBathroom, actionLabel: getSupportActionLabel('bathroom', item.nearbyBathroom) } : null,
+    item.nearbyService ? { type: 'service', location: item.nearbyService, actionLabel: getSupportActionLabel('service', item.nearbyService) } : null,
+  ].filter(Boolean);
+}
+
+function buildNearbyChips(item, focusedLocationId = '') {
+  return getNearbyStops(item)
+    .map(stop => `
+      <button
+        type="button"
+        class="map-nearby-chip ${stop.type} ${focusedLocationId === stop.location.id ? 'active' : ''}"
+        data-focus-location="${stop.location.id}"
+        title="Resaltar ${stop.location.label} en el mapa"
+      >
+        <span class="map-nearby-chip-kind">${stop.actionLabel}</span>
+        <span>${stop.location.shortLabel}</span>
+      </button>
+    `)
     .join('');
+}
+
+function wireFocusButtons(container, onFocusLocation) {
+  container.querySelectorAll('[data-focus-location]').forEach(button => {
+    button.addEventListener('click', () => {
+      onFocusLocation?.(button.dataset.focusLocation || '');
+    });
+  });
 }
 
 function renderModeButtons(target, preferredMode, hasGroupRoute, onSetMode) {
@@ -952,6 +1044,13 @@ function renderModeButtons(target, preferredMode, hasGroupRoute, onSetMode) {
     button.addEventListener('click', () => onSetMode(mode.id));
     target.appendChild(button);
   }
+}
+
+function renderRouteVisibilityButton(target, isRouteVisible, onToggleRouteVisibility) {
+  target.textContent = isRouteVisible ? 'Ocultar trazo' : 'Mostrar trazo';
+  target.classList.toggle('active', isRouteVisible);
+  target.setAttribute('aria-pressed', isRouteVisible ? 'true' : 'false');
+  target.onclick = () => onToggleRouteVisibility?.();
 }
 
 function renderLayerToggles(target, visibleLayers, onToggleLayer) {
@@ -984,7 +1083,7 @@ function renderLegendGrid(target) {
   }
 }
 
-function renderRouteSummary(target, routeData, activeMode) {
+function renderRouteSummary(target, routeData, activeMode, focusedLocationId, onFocusLocation) {
   target.innerHTML = '';
 
   if (routeData.unavailableMessage) {
@@ -1021,6 +1120,9 @@ function renderRouteSummary(target, routeData, activeMode) {
 
   routeData.items.forEach((item, index) => {
     const stepColors = getRouteOrderColors([index + 1], activeMode);
+    const incomingSegment = getIncomingSegment(routeData, index, startsFromEntry);
+    const arrivalReminder = getArrivalReminder(item, incomingSegment, routeData.items[index - 1]);
+    const nearbyChips = buildNearbyChips(item, focusedLocationId);
     const step = document.createElement('div');
     step.className = `map-route-step ${item.isConflict ? 'conflict' : ''}`;
     step.style.setProperty('--route-color', stepColors.start);
@@ -1031,12 +1133,17 @@ function renderRouteSummary(target, routeData, activeMode) {
         <div class="map-route-step-time">${item.startTime} – ${item.endTime}</div>
         <div class="map-route-step-title">${item.title}</div>
         <div class="map-route-step-meta">${item.meta}</div>
-        <div class="map-route-step-nearby">
-          ${buildNearbyChips(item)}
-        </div>
+        ${arrivalReminder ? `
+          <div class="map-route-reminder ${arrivalReminder.tone}">
+            <span class="map-route-reminder-label">${arrivalReminder.label}</span>
+            <span>${arrivalReminder.text}</span>
+          </div>
+        ` : ''}
+        ${nearbyChips ? `<div class="map-route-step-nearby">${nearbyChips}</div>` : ''}
         ${item.isConflict ? `<div class="map-route-warning">Conflicto con ${formatConflictList(item.conflictWith)}</div>` : ''}
       </div>
     `;
+    wireFocusButtons(step, onFocusLocation);
     target.appendChild(step);
 
     const segmentIndex = startsFromEntry ? index + 1 : index;
@@ -1071,7 +1178,7 @@ function renderRouteSummary(target, routeData, activeMode) {
   }
 }
 
-function renderRouteSuggestions(target, routeData, activeMode) {
+function renderRouteSuggestions(target, routeData, activeMode, focusedLocationId, onFocusLocation) {
   target.innerHTML = '';
 
   if (routeData.unavailableMessage) {
@@ -1093,25 +1200,29 @@ function renderRouteSuggestions(target, routeData, activeMode) {
   list.className = 'map-suggestion-list';
 
   routeData.suggestions.forEach((suggestion, index) => {
-    const card = document.createElement('div');
-    card.className = 'map-suggestion-card';
+    const card = document.createElement('button');
+    const isActive = focusedLocationId === suggestion.location.id;
+    card.type = 'button';
+    card.className = `map-suggestion-card ${isActive ? 'active' : ''}`;
     card.style.setProperty('--suggestion-color', suggestion.color);
     card.innerHTML = `
       <div class="map-suggestion-index">${index + 1}</div>
       <div class="map-suggestion-body">
         <div class="map-suggestion-kicker">${suggestion.badgeLabel}</div>
-        <div class="map-suggestion-title">${suggestion.location.shortLabel}</div>
-        <div class="map-suggestion-meta">${suggestion.title}</div>
+        <div class="map-suggestion-title">${suggestion.title}</div>
+        <div class="map-suggestion-meta">${suggestion.location.shortLabel}</div>
         <div class="map-suggestion-reason">${suggestion.reason}</div>
+        <div class="map-suggestion-cta">${isActive ? 'Ocultar del mapa' : 'Ver en el mapa'}</div>
       </div>
     `;
+    card.addEventListener('click', () => onFocusLocation?.(suggestion.location.id));
     list.appendChild(card);
   });
 
   target.appendChild(list);
 }
 
-function renderMapNodes(target, visibleLayers, routeData) {
+function renderMapNodes(target, visibleLayers, routeData, focusedLocationId = '') {
   target.innerHTML = '';
 
   const routeOrdersByLocation = new Map();
@@ -1151,9 +1262,10 @@ function renderMapNodes(target, visibleLayers, routeData) {
     const isEntry = isEntryVisible && location.id === FESTIVAL_ENTRY_ID;
     const isRoute = routeLocationIds.has(location.id);
     const isSplit = splitLocations.has(location.id);
+    const isFocused = focusedLocationId === location.id;
     const suggestion = suggestionsByLocation.get(location.id);
-    const isSuggested = Boolean(suggestion);
-    const isVisible = visibleLayers.has(location.category) || isRoute || isSplit || isSuggested;
+    const isSuggested = isFocused && Boolean(suggestion);
+    const isVisible = visibleLayers.has(location.category) || isRoute || isSplit || isFocused;
 
     if (!isVisible) continue;
 
@@ -1166,12 +1278,13 @@ function renderMapNodes(target, visibleLayers, routeData) {
     const point = isRoute || isSplit ? getRouteAnchor(location) : location;
     const routeColors = getRouteOrderColors(orderList, routeData.mode);
     const node = document.createElement('div');
-    node.className = `map-node ${visibleLayers.has(location.category) && !isRoute ? 'is-layer' : ''} ${isRoute ? 'is-route' : ''} ${isSplit ? 'is-split' : ''} ${isSuggested ? 'is-suggested' : ''} ${isEntry ? 'is-entry' : ''} ${isStart ? 'is-start' : ''} ${isEnd ? 'is-end' : ''} ${isRepeat ? 'is-repeat' : ''}`;
+    node.className = `map-node ${visibleLayers.has(location.category) && !isRoute ? 'is-layer' : ''} ${isRoute ? 'is-route' : ''} ${isSplit ? 'is-split' : ''} ${isSuggested ? 'is-suggested' : ''} ${isFocused ? 'is-focused' : ''} ${isEntry ? 'is-entry' : ''} ${isStart ? 'is-start' : ''} ${isEnd ? 'is-end' : ''} ${isRepeat ? 'is-repeat' : ''}`;
     node.style.left = `${point.x}%`;
     node.style.top = `${point.y}%`;
     node.style.setProperty('--node-color', meta.color);
     node.style.setProperty('--route-color', routeColors.start);
     node.style.setProperty('--route-color-end', routeColors.end);
+    node.style.setProperty('--focus-color', suggestion?.color || meta.color);
     if (suggestion) {
       node.style.setProperty('--suggestion-color', suggestion.color);
     }
@@ -1179,6 +1292,7 @@ function renderMapNodes(target, visibleLayers, routeData) {
     const titleBits = [];
     if (isEntry) titleBits.push('Inicio de ruta');
     if (routeItemLocationIds.has(location.id)) titleBits.push(`Parada ${order}`);
+    if (isFocused) titleBits.push('En foco');
     if (isSuggested) titleBits.push(suggestion.title);
     if (isSplit) titleBits.push('Punto de división');
     node.title = [location.label, ...titleBits].join(' · ');
@@ -1439,21 +1553,6 @@ function drawRouteOnCanvas(ctx, routeData, mode, rect) {
         );
       }
     });
-
-  routeData.suggestions
-    .filter(suggestion => !routeData.pathLocations.some(location => location.id === suggestion.location.id))
-    .forEach(suggestion => {
-      const point = scalePointToRect(suggestion.location, rect);
-      ctx.save();
-      ctx.fillStyle = 'rgba(13,13,18,0.76)';
-      ctx.strokeStyle = suggestion.color;
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.arc(point.x, point.y, 9, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.restore();
-    });
 }
 
 function getRouteExportBaseName(dayId, mode) {
@@ -1493,16 +1592,21 @@ function buildRouteTextExport(routeData, dayId, activeMode, shareUrl = '', selec
   }
 
   routeData.items.forEach((item, index) => {
+    const incomingSegment = getIncomingSegment(routeData, index, startsFromEntry);
+    const arrivalReminder = getArrivalReminder(item, incomingSegment, routeData.items[index - 1]);
     lines.push(`${index + 1}. ${item.startTime}–${item.endTime} · ${item.title}`);
     lines.push(`   ${item.meta}`);
     const nearby = [
-      item.nearbyFood ? `Comer: ${item.nearbyFood.shortLabel}` : '',
-      item.nearbyWater ? `Agua: ${item.nearbyWater.shortLabel}` : '',
-      item.nearbyBathroom ? `Baños: ${item.nearbyBathroom.shortLabel}` : '',
-      item.nearbyService ? `Extra: ${item.nearbyService.shortLabel}` : '',
+      item.nearbyFood ? `${getSupportActionLabel('food', item.nearbyFood)}: ${item.nearbyFood.shortLabel}` : '',
+      item.nearbyWater ? `${getSupportActionLabel('water', item.nearbyWater)}: ${item.nearbyWater.shortLabel}` : '',
+      item.nearbyBathroom ? `${getSupportActionLabel('bathroom', item.nearbyBathroom)}: ${item.nearbyBathroom.shortLabel}` : '',
+      item.nearbyService ? `${getSupportActionLabel('service', item.nearbyService)}: ${item.nearbyService.shortLabel}` : '',
     ].filter(Boolean);
     if (nearby.length > 0) {
       lines.push(`   Cerca: ${nearby.join(' · ')}`);
+    }
+    if (arrivalReminder) {
+      lines.push(`   Recordatorio: ${arrivalReminder.label}. ${arrivalReminder.text}`);
     }
     if (item.isConflict) {
       lines.push(`   Conflicto con ${formatConflictList(item.conflictWith, 3)}`);
@@ -1517,8 +1621,8 @@ function buildRouteTextExport(routeData, dayId, activeMode, shareUrl = '', selec
   if (routeData.suggestions?.length) {
     lines.push('Paradas útiles sugeridas');
     routeData.suggestions.forEach(suggestion => {
-      lines.push(`- ${suggestion.badgeLabel}: ${suggestion.location.shortLabel}`);
-      lines.push(`  ${suggestion.title}. ${suggestion.reason}`);
+      lines.push(`- ${suggestion.badgeLabel} · ${suggestion.title}: ${suggestion.location.shortLabel}`);
+      lines.push(`  ${suggestion.reason}`);
     });
     lines.push('');
   }
@@ -1689,10 +1793,10 @@ async function exportRouteImage(routeData, dayId, activeMode, shareUrl = '', sel
     ctx.font = "500 18px 'Outfit', sans-serif";
     ctx.fillText(item.meta, textX, y + 84);
     const nearbyText = [
-      item.nearbyFood ? `Comer: ${item.nearbyFood.shortLabel}` : '',
-      item.nearbyWater ? `Agua: ${item.nearbyWater.shortLabel}` : '',
-      item.nearbyBathroom ? `Baños: ${item.nearbyBathroom.shortLabel}` : '',
-      item.nearbyService ? `Extra: ${item.nearbyService.shortLabel}` : '',
+      item.nearbyFood ? `${getSupportActionLabel('food', item.nearbyFood)}: ${item.nearbyFood.shortLabel}` : '',
+      item.nearbyWater ? `${getSupportActionLabel('water', item.nearbyWater)}: ${item.nearbyWater.shortLabel}` : '',
+      item.nearbyBathroom ? `${getSupportActionLabel('bathroom', item.nearbyBathroom)}: ${item.nearbyBathroom.shortLabel}` : '',
+      item.nearbyService ? `${getSupportActionLabel('service', item.nearbyService)}: ${item.nearbyService.shortLabel}` : '',
     ].filter(Boolean).join(' · ');
     ctx.fillStyle = 'rgba(210, 203, 235, 0.82)';
     ctx.font = "500 16px 'Outfit', sans-serif";
@@ -1790,11 +1894,15 @@ export function renderMapPanel({
   mapMode,
   mergeState,
   visibleLayers,
+  isRouteVisible,
+  focusedLocationId,
   shareUrl,
   selectionSeed,
   onToast,
   onSetMode,
+  onToggleRouteVisibility,
   onToggleLayer,
+  onFocusLocation,
 }) {
   const routeCaption = document.getElementById('map-route-caption');
   const routeSummary = document.getElementById('map-route-summary');
@@ -1803,10 +1911,11 @@ export function renderMapPanel({
   const poiLayer = document.getElementById('festival-map-pois');
   const layerToggles = document.getElementById('map-layer-toggles');
   const modeToggle = document.getElementById('map-mode-toggle');
+  const routeVisibilityToggle = document.getElementById('map-route-visibility-toggle');
   const exportImageButton = document.getElementById('btn-export-map-image');
   const exportTextButton = document.getElementById('btn-export-map-text');
 
-  if (!routeCaption || !routeSummary || !routeSuggestions || !routeSvg || !poiLayer || !layerToggles || !modeToggle || !exportImageButton || !exportTextButton) {
+  if (!routeCaption || !routeSummary || !routeSuggestions || !routeSvg || !poiLayer || !layerToggles || !modeToggle || !routeVisibilityToggle || !exportImageButton || !exportTextButton) {
     return;
   }
 
@@ -1815,13 +1924,15 @@ export function renderMapPanel({
   const routeData = getRouteData(dayId, selectedIds, activeMode, mergeState);
 
   routeCaption.textContent = formatRouteOverview(routeData, dayId, activeMode);
-  routeSvg.innerHTML = buildRouteSvg(routeData, activeMode);
+  routeSvg.innerHTML = isRouteVisible ? buildRouteSvg(routeData, activeMode) : '';
 
   renderModeButtons(modeToggle, activeMode, hasGroupRoute, onSetMode);
+  renderRouteVisibilityButton(routeVisibilityToggle, isRouteVisible, onToggleRouteVisibility);
+  routeVisibilityToggle.disabled = routeData.segments.length === 0;
   renderLayerToggles(layerToggles, visibleLayers, onToggleLayer);
-  renderRouteSummary(routeSummary, routeData, activeMode);
-  renderRouteSuggestions(routeSuggestions, routeData, activeMode);
-  renderMapNodes(poiLayer, visibleLayers, routeData);
+  renderRouteSummary(routeSummary, routeData, activeMode, focusedLocationId, onFocusLocation);
+  renderRouteSuggestions(routeSuggestions, routeData, activeMode, focusedLocationId, onFocusLocation);
+  renderMapNodes(poiLayer, visibleLayers, routeData, focusedLocationId);
 
   const canExport = !routeData.unavailableMessage && routeData.items.length > 0;
   exportImageButton.disabled = !canExport;

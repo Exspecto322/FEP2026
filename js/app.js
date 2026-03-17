@@ -20,6 +20,8 @@ let currentView = 'schedule'; // 'schedule' | 'my-schedule' | 'merge' | 'clubes'
 let currentLayout = 'grid'; // 'grid' | 'list'
 let currentMapMode = 'personal'; // 'personal' | 'group'
 let visibleMapLayers = new Set(DEFAULT_MAP_LAYERS);
+let isMapRouteVisible = true;
+let focusedMapLocationId = '';
 let latestMergeState = null;
 
 // ============================================================
@@ -434,11 +436,17 @@ function rerenderMap() {
     mapMode: currentMapMode,
     mergeState: latestMergeState,
     visibleLayers: visibleMapLayers,
+    isRouteVisible: isMapRouteVisible,
+    focusedLocationId: focusedMapLocationId,
     shareUrl: selectedIds.size > 0 ? getShareableURL(selectedIds) : '',
     selectionSeed: selectedIds.size > 0 ? encodeSeed(selectedIds) : '',
     onToast: showToast,
     onSetMode: (mode) => {
       currentMapMode = mode;
+      rerenderMap();
+    },
+    onToggleRouteVisibility: () => {
+      isMapRouteVisible = !isMapRouteVisible;
       rerenderMap();
     },
     onToggleLayer: (layerId) => {
@@ -447,6 +455,10 @@ function rerenderMap() {
       } else {
         visibleMapLayers.add(layerId);
       }
+      rerenderMap();
+    },
+    onFocusLocation: (locationId) => {
+      focusedMapLocationId = focusedMapLocationId === locationId ? '' : locationId;
       rerenderMap();
     },
   });

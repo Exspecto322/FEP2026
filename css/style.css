@@ -1294,6 +1294,13 @@ input, textarea {
   margin-bottom: 18px;
 }
 
+.map-toolbar-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
 .map-mode-toggle {
   display: inline-flex;
   gap: 8px;
@@ -1328,6 +1335,41 @@ input, textarea {
 .map-mode-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.map-visibility-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  font-weight: 700;
+  transition: transform 0.2s var(--ease-out), border-color 0.2s var(--ease-out), background 0.2s var(--ease-out), color 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
+}
+
+.map-visibility-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(246, 241, 228, 0.22);
+  color: var(--text-primary);
+}
+
+.map-visibility-btn.active {
+  background: rgba(246, 241, 228, 0.08);
+  border-color: rgba(246, 241, 228, 0.18);
+  color: #f8f3e8;
+  box-shadow: 0 12px 28px rgba(246, 241, 228, 0.08);
+}
+
+.map-visibility-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .map-caption {
@@ -1516,6 +1558,17 @@ input, textarea {
     0 8px 18px rgba(0, 0, 0, 0.24);
 }
 
+.map-node.is-focused {
+  z-index: 5;
+}
+
+.map-node.is-focused .map-node-core {
+  box-shadow:
+    0 0 0 8px color-mix(in srgb, var(--focus-color, #f6f1e4) 22%, transparent),
+    0 12px 26px rgba(0, 0, 0, 0.28);
+  transform: scale(1.08);
+}
+
 .map-node.is-split .map-node-core {
   box-shadow: 0 0 0 6px rgba(255, 77, 77, 0.15);
 }
@@ -1613,6 +1666,53 @@ input, textarea {
   margin-top: 4px;
 }
 
+.map-route-reminder {
+  display: grid;
+  gap: 4px;
+  margin-top: 9px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.map-route-reminder-label {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.map-route-reminder.headliner {
+  border-color: rgba(246, 217, 107, 0.26);
+  background: rgba(246, 217, 107, 0.08);
+}
+
+.map-route-reminder.headliner .map-route-reminder-label {
+  color: #f6d96b;
+}
+
+.map-route-reminder.top {
+  border-color: rgba(139, 225, 177, 0.24);
+  background: rgba(139, 225, 177, 0.08);
+}
+
+.map-route-reminder.top .map-route-reminder-label {
+  color: #8be1b1;
+}
+
+.map-route-reminder.walk {
+  border-color: rgba(126, 217, 246, 0.22);
+  background: rgba(126, 217, 246, 0.08);
+}
+
+.map-route-reminder.walk .map-route-reminder-label {
+  color: #7ed9f6;
+}
+
 .map-route-step-nearby {
   display: flex;
   flex-wrap: wrap;
@@ -1623,6 +1723,7 @@ input, textarea {
 }
 
 .map-nearby-chip {
+  appearance: none;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1633,6 +1734,13 @@ input, textarea {
   color: var(--text-primary);
   font-size: 0.68rem;
   font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.2s var(--ease-out), border-color 0.2s var(--ease-out), background 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
+}
+
+.map-nearby-chip:hover {
+  transform: translateY(-1px);
 }
 
 .map-nearby-chip-kind {
@@ -1664,6 +1772,30 @@ input, textarea {
   background: rgba(100, 227, 139, 0.1);
   border-color: rgba(100, 227, 139, 0.18);
   color: #baf7ca;
+}
+
+.map-nearby-chip.active {
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+}
+
+.map-nearby-chip.food.active {
+  background: rgba(255, 138, 0, 0.18);
+  border-color: rgba(255, 138, 0, 0.3);
+}
+
+.map-nearby-chip.water.active {
+  background: rgba(124, 231, 255, 0.18);
+  border-color: rgba(124, 231, 255, 0.28);
+}
+
+.map-nearby-chip.bathroom.active {
+  background: rgba(77, 208, 255, 0.18);
+  border-color: rgba(77, 208, 255, 0.28);
+}
+
+.map-nearby-chip.service.active {
+  background: rgba(100, 227, 139, 0.18);
+  border-color: rgba(100, 227, 139, 0.3);
 }
 
 .map-route-warning {
@@ -1722,10 +1854,27 @@ input, textarea {
   display: grid;
   grid-template-columns: 28px minmax(0, 1fr);
   gap: 12px;
+  width: 100%;
   padding: 12px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
+  appearance: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.2s var(--ease-out), border-color 0.2s var(--ease-out), background 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
+}
+
+.map-suggestion-card:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--suggestion-color) 28%, rgba(255, 255, 255, 0.08));
+}
+
+.map-suggestion-card.active {
+  background: color-mix(in srgb, var(--suggestion-color) 10%, rgba(255, 255, 255, 0.04));
+  border-color: color-mix(in srgb, var(--suggestion-color) 40%, rgba(255, 255, 255, 0.08));
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--suggestion-color) 12%, transparent);
 }
 
 .map-suggestion-index {
@@ -1773,6 +1922,15 @@ input, textarea {
   font-size: 0.72rem;
   color: var(--text-muted);
   line-height: 1.45;
+}
+
+.map-suggestion-cta {
+  margin-top: 8px;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--suggestion-color) 86%, white);
 }
 
 .map-export-actions {
@@ -2001,6 +2159,10 @@ input, textarea {
     align-items: stretch;
   }
 
+  .map-toolbar-actions {
+    width: 100%;
+  }
+
   .map-caption {
     max-width: none;
     text-align: left;
@@ -2058,6 +2220,10 @@ input, textarea {
   .map-mode-btn {
     flex: 1;
     justify-content: center;
+  }
+
+  .map-visibility-btn {
+    flex: 1 1 180px;
   }
 
   .map-route-step {
